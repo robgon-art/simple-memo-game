@@ -1,31 +1,37 @@
 import { LitElement, html, unsafeCSS } from 'lit';
-import { customElement, property, state } from 'lit/decorators.js';
+import { customElement, property } from 'lit/decorators.js';
 import cardStyles from './card.css?inline';
 
 @customElement('flip-card')
-export class Card extends LitElement {
+export class FlipCard extends LitElement {
   @property({ type: String }) frontImage = '';
   @property({ type: String }) backImage = '';
-  @property({ type: String }) frontAlt = 'Card Front';
-  @property({ type: String }) backAlt = 'Card Back';
-  @property({ type: Boolean }) revealed = false;
+  @property({ type: String }) frontAlt = '';
+  @property({ type: String }) backAlt = '';
+  @property({ type: Boolean, reflect: true }) revealed = false;
+  @property({ type: Boolean, reflect: true }) matched = false;
 
-  @state() private isFlipped = false;
-
-  updated(changedProperties: Map<string, any>) {
-    if (changedProperties.has('revealed')) {
-      this.isFlipped = this.revealed;
+  handleClick() {
+    // Prevent flipping already matched cards or currently revealed cards
+    if (this.matched || this.revealed) {
+      return;
     }
+
+    // Let parent component know the card was flipped
+    this.dispatchEvent(new CustomEvent('card-flipped', {
+      bubbles: true,
+      composed: true
+    }));
   }
 
   render() {
     return html`
-      <div class="card-container">
-        <div class="card ${this.isFlipped ? 'flipped' : ''}" @click=${this._flipCard}>
-          <div class="card-face front">
+      <div class="flip-card ${this.revealed ? 'revealed' : ''} ${this.matched ? 'matched' : ''}">
+        <div class="flip-card-inner">
+          <div class="flip-card-front">
             <img src="${this.frontImage}" alt="${this.frontAlt}">
           </div>
-          <div class="card-face back">
+          <div class="flip-card-back" @click="${this.handleClick}">
             <img src="${this.backImage}" alt="${this.backAlt}">
           </div>
         </div>
@@ -33,26 +39,11 @@ export class Card extends LitElement {
     `;
   }
 
-  private _flipCard() {
-    this.isFlipped = !this.isFlipped;
-    // Dispatch event to notify parent
-    this.dispatchEvent(new CustomEvent('card-flipped', {
-      bubbles: true,
-      composed: true,
-      detail: { flipped: this.isFlipped }
-    }));
-  }
-
-  // Public method to flip the card programmatically
-  flipCard(flip = true) {
-    this.isFlipped = flip;
-  }
-
   static styles = unsafeCSS(cardStyles);
 }
 
 declare global {
   interface HTMLElementTagNameMap {
-    'flip-card': Card
+    'flip-card': FlipCard
   }
 } 

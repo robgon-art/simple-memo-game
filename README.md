@@ -1,10 +1,20 @@
 # Memory Matching Game
 
-A simple memory matching game implemented with web components using Lit.
+A simple memory matching game implemented with web components using Lit and TypeScript.
+
+## Playing the Game
+
+- This is a card matching game that requires visual memory to remember where certain cards are in order to find matching pairs.
+- There are 12 pairs of cards with different paintings on the front face.
+- The cards are shuffled and arranged in an 8x3 grid, face down.
+- The user clicks on any two cards to see if there is a match.
+- If there is a match, these cards stay face up.
+- If there is not a match, both cards flip to be face down after a couple of seconds.
+- The game proceeds until all cards have been matched.
 
 ## Features
 - 24 cards (12 pairs of famous artworks)
-- Responsive 6x4 grid layout (adapts to different screen sizes)
+- Responsive 8x3 grid layout (adapts to different screen sizes)
 - Interactive card flipping
 - Modern component architecture
 

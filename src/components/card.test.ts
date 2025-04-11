@@ -1,14 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { fixture, html } from '@open-wc/testing';
-import './card.ts';
-import { Card } from './card';
+import { FlipCard } from './card';
+import './card';
 
-describe('flip-card', () => {
-    let element: Card;
-
-    beforeEach(async () => {
-        // Create the element with properties
-        element = await fixture<Card>(html`
+describe('FlipCard Component', () => {
+  it('renders with correct structure', async () => {
+    const el = await fixture<FlipCard>(html`
       <flip-card
         frontImage="/test-front.jpg"
         backImage="/test-back.jpg"
@@ -16,68 +13,116 @@ describe('flip-card', () => {
         backAlt="Test Back"
       ></flip-card>
     `);
-    });
 
-    afterEach(() => {
-        element.remove();
-    });
+    expect(el.shadowRoot).toBeDefined();
 
-    it('renders with the correct properties', () => {
-        const frontImg = element.shadowRoot!.querySelector('.front img') as HTMLImageElement;
-        const backImg = element.shadowRoot!.querySelector('.back img') as HTMLImageElement;
+    // Check the images are set correctly
+    const frontImg = el.shadowRoot!.querySelector('.flip-card-front img') as HTMLImageElement;
+    const backImg = el.shadowRoot!.querySelector('.flip-card-back img') as HTMLImageElement;
 
-        expect(frontImg).not.toBeNull();
-        expect(backImg).not.toBeNull();
+    expect(frontImg).toBeDefined();
+    expect(backImg).toBeDefined();
+    expect(frontImg.src).toContain('/test-front.jpg');
+    expect(backImg.src).toContain('/test-back.jpg');
+    expect(frontImg.alt).toBe('Test Front');
+    expect(backImg.alt).toBe('Test Back');
+  });
 
-        expect(frontImg.src).to.include('/test-front.jpg');
-        expect(backImg.src).to.include('/test-back.jpg');
-        expect(frontImg.alt).to.equal('Test Front');
-        expect(backImg.alt).to.equal('Test Back');
-    });
+  it('flips when clicked and emits event', async () => {
+    const el = await fixture<FlipCard>(html`
+      <flip-card
+        frontImage="/test-front.jpg"
+        backImage="/test-back.jpg"
+      ></flip-card>
+    `);
 
-    it('starts with isFlipped set to false', () => {
-        const card = element.shadowRoot!.querySelector('.card');
-        expect(card?.classList.contains('flipped')).to.be.false;
-    });
+    // Setup event listener to capture the custom event
+    const eventSpy = vi.fn();
+    el.addEventListener('card-flipped', eventSpy);
 
-    it('flips the card when clicked', async () => {
-        const card = element.shadowRoot!.querySelector('.card') as HTMLElement;
+    // Click the card back
+    const cardBack = el.shadowRoot!.querySelector('.flip-card-back');
+    cardBack!.dispatchEvent(new MouseEvent('click'));
 
-        // Initial state
-        expect(card.classList.contains('flipped')).to.be.false;
+    // Check if the event was dispatched
+    expect(eventSpy).toHaveBeenCalledTimes(1);
+  });
 
-        // Directly call the flip method instead of triggering via DOM event
-        // @ts-ignore: accessing private method for testing
-        element._flipCard();
+  it('toggles revealed state when property changes', async () => {
+    const el = await fixture<FlipCard>(html`
+      <flip-card
+        frontImage="/test-front.jpg"
+        backImage="/test-back.jpg"
+        ?revealed=${false}
+      ></flip-card>
+    `);
 
-        // Force re-render and check if flipped
-        await element.updateComplete;
-        expect(card.classList.contains('flipped')).to.be.true;
+    // Initially not revealed
+    let cardElement = el.shadowRoot!.querySelector('.flip-card');
+    expect(cardElement!.classList.contains('revealed')).toBe(false);
 
-        // Flip back
-        // @ts-ignore: accessing private method for testing
-        element._flipCard();
+    // Set revealed to true
+    el.revealed = true;
+    await el.updateComplete;
 
-        // Force re-render and check if flipped back
-        await element.updateComplete;
-        expect(card.classList.contains('flipped')).to.be.false;
-    });
+    // Should now have the revealed class
+    cardElement = el.shadowRoot!.querySelector('.flip-card');
+    expect(cardElement!.classList.contains('revealed')).toBe(true);
+  });
 
-    it('accepts default property values', async () => {
-        // Create element without properties
-        const defaultElement = await fixture<Card>(html`<flip-card></flip-card>`);
+  it('supports matched state', async () => {
+    const el = await fixture<FlipCard>(html`
+      <flip-card
+        frontImage="/test-front.jpg"
+        backImage="/test-back.jpg"
+        ?matched=${true}
+      ></flip-card>
+    `);
 
-        const frontImg = defaultElement.shadowRoot!.querySelector('.front img') as HTMLImageElement;
-        const backImg = defaultElement.shadowRoot!.querySelector('.back img') as HTMLImageElement;
+    // Should have the matched class
+    const cardElement = el.shadowRoot!.querySelector('.flip-card');
+    expect(cardElement!.classList.contains('matched')).toBe(true);
+  });
 
-        // Check default properties are applied - empty src resolves to base URL
-        expect(frontImg.src).not.to.include('/test-front.jpg');
-        expect(backImg.src).not.to.include('/test-back.jpg');
-        expect(frontImg.getAttribute('src')).to.equal('');
-        expect(backImg.getAttribute('src')).to.equal('');
-        expect(frontImg.alt).to.equal('Card Front');
-        expect(backImg.alt).to.equal('Card Back');
+  it('does not emit event when already matched', async () => {
+    const el = await fixture<FlipCard>(html`
+      <flip-card
+        frontImage="/test-front.jpg"
+        backImage="/test-back.jpg"
+        ?matched=${true}
+      ></flip-card>
+    `);
 
-        defaultElement.remove();
-    });
+    // Setup event listener to capture the custom event
+    const eventSpy = vi.fn();
+    el.addEventListener('card-flipped', eventSpy);
+
+    // Click the card back
+    const cardBack = el.shadowRoot!.querySelector('.flip-card-back');
+    cardBack!.dispatchEvent(new MouseEvent('click'));
+
+    // No event should be dispatched when card is already matched
+    expect(eventSpy).not.toHaveBeenCalled();
+  });
+
+  it('does not emit event when already revealed', async () => {
+    const el = await fixture<FlipCard>(html`
+      <flip-card
+        frontImage="/test-front.jpg"
+        backImage="/test-back.jpg"
+        ?revealed=${true}
+      ></flip-card>
+    `);
+
+    // Setup event listener to capture the custom event
+    const eventSpy = vi.fn();
+    el.addEventListener('card-flipped', eventSpy);
+
+    // Click the card back
+    const cardBack = el.shadowRoot!.querySelector('.flip-card-back');
+    cardBack!.dispatchEvent(new MouseEvent('click'));
+
+    // No event should be dispatched when card is already revealed
+    expect(eventSpy).not.toHaveBeenCalled();
+  });
 }); 

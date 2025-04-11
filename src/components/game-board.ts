@@ -3,94 +3,139 @@ import { customElement, state } from 'lit/decorators.js';
 import './grid';
 import './card';
 import gameBoardStyles from './game-board.css?inline';
-
-interface CardData {
-  id: number;
-  imagePath: string;
-  imageAlt: string;
-  pairId: number;
-  isRevealed: boolean;
-}
+import { GameState, GameStatus, initializeGame } from '../models/game-state';
+import { selectCard } from '../functions/card-selection';
+import { processMatches } from '../functions/match-checking';
+import { clearSelectedCards } from '../functions/card-selection';
+import { shuffleCards } from '../functions/shuffle';
+import imageManager from '../managers/image-manager';
 
 @customElement('memory-game-board')
 export class GameBoard extends LitElement {
-  @state() private cards: CardData[] = [];
+  @state() gameState: GameState;
   private backImage = '/Back Side.jpg';
   private backAlt = 'Card Back';
+  private matchCheckTimer: number | null = null;
 
   constructor() {
     super();
-    this.initializeCards();
+    this.gameState = this.initializeGameState();
   }
 
-  initializeCards() {
-    const cardImages = [
-      { path: '/cards/A Sunday Afternoon on the Island of La Grande Jatte, Georges Seurat, 1884.jpg', alt: 'Seurat - A Sunday Afternoon' },
-      { path: '/cards/Mont Sainte-Victoire, Paul Cézanne, c. 1890s.jpg', alt: 'Cézanne - Mont Sainte-Victoire' },
-      { path: '/cards/Jeanne Samary in a Low-Necked Dress, Pierre-Auguste Renoir, 1877.jpg', alt: 'Renoir - Jeanne Samary' },
-      { path: '/cards/Children Playing on the Beach, Mary Cassatt, 1884.jpg', alt: 'Cassatt - Children Playing' },
-      { path: '/cards/The Green Line, Henri Matisse, 1905.jpg', alt: 'Matisse - The Green Line' },
-      { path: '/cards/The Starry Night, Vincent van Gogh, 1889.jpg', alt: 'Van Gogh - Starry Night' },
-      { path: '/cards/Le Déjeuner sur l\'herbe, Édouard Manet, 1863.jpg', alt: 'Manet - Le Déjeuner sur l\'herbe' },
-      { path: '/cards/Dance at Bougival, Pierre-Auguste Renoir, 1883.jpg', alt: 'Renoir - Dance at Bougival' },
-      { path: '/cards/The Ballet Class, Edgar Degas, 1873.jpg', alt: 'Degas - The Ballet Class' },
-      { path: '/cards/Boulevard Montmartre, Spring, Camille Pissarro, 1897.jpg', alt: 'Pissarro - Boulevard Montmartre' },
-      { path: '/cards/At the Moulin Rouge - The Dance, Henri de Toulouse-Lautrec, 1890.jpg', alt: 'Toulouse-Lautrec - At the Moulin Rouge' },
-      { path: '/cards/Impression Sunrise, Claude Monet, 1872.jpg', alt: 'Monet - Impression Sunrise' }
-    ];
-
-    // Create pairs of cards
-    const cardPairs: CardData[] = [];
-
-    cardImages.forEach((image, index) => {
-      // Create first card in pair
-      cardPairs.push({
-        id: index * 2,
-        imagePath: image.path,
-        imageAlt: image.alt,
-        pairId: index,
-        isRevealed: false
-      });
-
-      // Create second card in pair
-      cardPairs.push({
-        id: index * 2 + 1,
-        imagePath: image.path,
-        imageAlt: image.alt,
-        pairId: index,
-        isRevealed: false
-      });
-    });
-
-    this.cards = cardPairs;
+  /**
+   * Initialize a new game state with shuffled cards
+   */
+  initializeGameState(): GameState {
+    return initializeGame(12, shuffleCards);
   }
 
+  /**
+   * Handle card flip event from a card component
+   */
   handleCardFlip(event: CustomEvent, cardId: number) {
-    // Prevent default handling so we can use our own logic
+    // Prevent default handling
     event.stopPropagation();
 
-    // Update our model with the new state
-    this.cards = this.cards.map(card =>
-      card.id === cardId ? { ...card, isRevealed: !card.isRevealed } : card
-    );
+    // Update game state with the selected card
+    this.gameState = selectCard(this.gameState, cardId);
+
+    // After selecting the second card, check for a match
+    if (this.gameState.selectedCardIds.length === 2) {
+      this.checkForMatches();
+    }
+  }
+
+  /**
+   * Check for matches and handle the result
+   */
+  checkForMatches() {
+    // Process matches in the current game state
+    const updatedState = processMatches(this.gameState);
+    this.gameState = updatedState;
+
+    // If there was no match, set a timer to flip the cards back
+    if (this.gameState.selectedCardIds.length === 2) {
+      // Cancel any existing timer
+      if (this.matchCheckTimer !== null) {
+        window.clearTimeout(this.matchCheckTimer);
+      }
+
+      // Set a new timer to flip cards back after 2 seconds
+      this.matchCheckTimer = window.setTimeout(() => {
+        this.gameState = clearSelectedCards(this.gameState);
+        this.matchCheckTimer = null;
+      }, 2000);
+    }
+
+    // Check for game completion
+    if (this.gameState.status === GameStatus.COMPLETED) {
+      this.handleGameCompletion();
+    }
+  }
+
+  /**
+   * Handle game completion
+   */
+  private handleGameCompletion() {
+    // For now, just log game completion
+    console.log(`Game completed in ${this.gameState.moves} moves!`);
+    // In the future, this could show a celebration animation or modal
+  }
+
+  /**
+   * Restart the game
+   */
+  restartGame() {
+    // Cancel any pending timers
+    if (this.matchCheckTimer !== null) {
+      window.clearTimeout(this.matchCheckTimer);
+      this.matchCheckTimer = null;
+    }
+
+    // Initialize a new game state
+    this.gameState = this.initializeGameState();
+  }
+
+  /**
+   * Get the image path for a card based on its imageId
+   */
+  private getCardImagePath(imageId: number): string {
+    const image = imageManager.getCardImageById(imageId);
+    return image ? image.path : '';
+  }
+
+  /**
+   * Get the alt text for a card based on its imageId
+   */
+  private getCardAltText(imageId: number): string {
+    const image = imageManager.getCardImageById(imageId);
+    return image ? image.name : 'Card';
   }
 
   render() {
     return html`
       <div class="memory-game">
         <h1>Memory Matching Game</h1>
+        <div class="game-stats">
+          <p>Moves: ${this.gameState.moves}</p>
+          ${this.gameState.status === GameStatus.COMPLETED
+        ? html`<p class="game-complete">Game Complete!</p>`
+        : ''}
+        </div>
         <memory-grid>
-          ${this.cards.map(card => html`
+          ${this.gameState.cards.map(card => html`
             <flip-card
-              .frontImage=${card.imagePath}
+              .frontImage=${this.getCardImagePath(card.imageId)}
               .backImage=${this.backImage}
-              .frontAlt=${card.imageAlt}
+              .frontAlt=${this.getCardAltText(card.imageId)}
               .backAlt=${this.backAlt}
               ?revealed=${card.isRevealed}
+              ?matched=${card.isMatched}
               @card-flipped=${(e: CustomEvent) => this.handleCardFlip(e, card.id)}
             ></flip-card>
           `)}
         </memory-grid>
+        <button @click=${this.restartGame} class="restart-button">Restart Game</button>
       </div>
     `;
   }

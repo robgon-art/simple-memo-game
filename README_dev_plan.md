@@ -19,7 +19,7 @@
    - First card selection
    - Second card selection
    - Match checking
-   - Auto-hiding unmatched cards after 2-second delay
+   - Auto-flipping unmatched cards after 2-second delay
 
 
 ## Phase 4: Testing
