@@ -4,36 +4,38 @@ import { html } from 'lit';
 import './grid';
 
 describe('Memory Grid', () => {
-    it('renders with the expected structure', async () => {
-        const el = await fixture(html`<memory-grid></memory-grid>`);
+  it('renders with the expected structure', async () => {
+    const el = await fixture(html`<memory-grid></memory-grid>`);
 
-        // Check that the component has rendered
-        assert.shadowDom.equal(el, `
+    // Check that the component has rendered
+    assert.shadowDom.equal(el, `
       <div class="grid-container">
         <slot></slot>
       </div>
     `);
-    });
+  });
 
-    it('can contain card elements', async () => {
-        // Create a mock card element for testing
-        const mockCard = document.createElement('div');
-        mockCard.className = 'mock-card';
-        mockCard.textContent = 'Test Card';
+  it('can contain card elements', async () => {
+    // Create a mock card element for testing
+    const mockCard = document.createElement('div');
+    mockCard.className = 'mock-card';
+    mockCard.textContent = 'Test Card';
 
-        const el = await fixture(html`
+    const el = await fixture(html`
       <memory-grid>
         ${mockCard}
       </memory-grid>
     `);
 
-        // Verify the card was slotted correctly
-        const slot = el.shadowRoot!.querySelector('slot');
-        expect(slot).to.exist;
+    // Verify the card was slotted correctly
+    const slot = el.shadowRoot!.querySelector('slot');
+    expect(slot).to.exist;
 
-        // Get the assigned nodes (should include our mock card)
-        const assignedNodes = slot!.assignedNodes();
-        expect(assignedNodes.length).to.equal(1);
-        expect(assignedNodes[0]).to.equal(mockCard);
-    });
+    // Get the assigned nodes (should include our mock card)
+    const assignedNodes = slot!.assignedNodes();
+    // Filter for only element nodes (excludes text nodes like whitespace)
+    const elementNodes = assignedNodes.filter(node => node.nodeType === Node.ELEMENT_NODE);
+    expect(elementNodes.length).to.equal(1);
+    expect(elementNodes[0]).to.equal(mockCard);
+  });
 }); 
