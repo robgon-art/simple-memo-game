@@ -5,9 +5,6 @@ import '../components/game-board';
 import { GameStatus, initializeGame } from '../models/game-state';
 import { seededShuffleCards } from '../functions/shuffle';
 
-// Register custom elements
-customElements.define('test-memory-game-board', GameBoard);
-
 describe('GameBoard Component', () => {
     let element: GameBoard;
 
@@ -15,8 +12,8 @@ describe('GameBoard Component', () => {
     type TimeoutId = ReturnType<typeof setTimeout>;
 
     beforeEach(async () => {
-        // Create a new instance of the component before each test
-        element = await fixture(html`<test-memory-game-board></test-memory-game-board>`);
+        // Use the component's actual registered name
+        element = await fixture(html`<memory-game-board></memory-game-board>`);
 
         // Mock setTimeout
         vi.spyOn(window, 'setTimeout').mockImplementation((callback: TimerHandler, _?: number) => {

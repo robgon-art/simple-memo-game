@@ -32,6 +32,8 @@ export class Grid extends LitElement {
     const rows = 3;
     const gap = 12;
     const padding = 8;
+    // Scale factor to make cards 20% larger
+    const scaleFactor = 1.25;
 
     // Calculate available space
     const availableWidth = containerWidth - (padding * 2) - (gap * (columns - 1));
@@ -44,15 +46,19 @@ export class Grid extends LitElement {
     // Determine optimal size based on aspect ratio (3:4)
     let optimalWidth, optimalHeight;
 
-    if (maxCardWidth / maxCardHeight > 0.75) { // 3:4 = 0.75
+    if (maxCardWidth / maxCardHeight > 0.8) { // Changed from 0.75 to 0.85
       // Height constrained
       optimalHeight = maxCardHeight;
-      optimalWidth = optimalHeight * 0.75;
+      optimalWidth = optimalHeight * 0.8; // Changed from 0.75 to 0.85
     } else {
       // Width constrained
       optimalWidth = maxCardWidth;
-      optimalHeight = optimalWidth / 0.75;
+      optimalHeight = optimalWidth / 0.8; // Changed from 0.75 to 0.85
     }
+
+    // Apply scaling factor to make cards larger
+    optimalWidth = Math.min(optimalWidth * scaleFactor, maxCardWidth);
+    optimalHeight = Math.min(optimalHeight * scaleFactor, maxCardHeight);
 
     // Apply the styles to the CSS variables
     this.style.setProperty('--card-width', `${optimalWidth}px`);
