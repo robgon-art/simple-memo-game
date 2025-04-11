@@ -57,12 +57,27 @@ export class GameBoard extends LitElement {
       this.timerService.clearTimeout(this.matchCheckTimer);
       this.matchCheckTimer = null;
 
-      // Reset the mismatched cards
-      this.gameState = clearSelectedCards(this.gameState);
-    }
+      // Reset the mismatched cards and ensure any matching state is also reset
+      const clearedState = clearSelectedCards(this.gameState);
 
-    // Update game state with the selected card
-    this.gameState = selectCard(this.gameState, cardId);
+      // Make sure none of the previously selected cards are marked as matched incorrectly
+      const selectedCardIds = this.gameState.selectedCardIds;
+      const fullyResetState = {
+        ...clearedState,
+        cards: clearedState.cards.map(card =>
+          selectedCardIds.includes(card.id) ? { ...card, isMatched: false, isRevealed: false } : card
+        )
+      };
+
+      // Update game state with reset cards before processing the new selection
+      this.gameState = fullyResetState;
+
+      // Now select the new card after proper cleanup
+      this.gameState = selectCard(this.gameState, cardId);
+    } else {
+      // Normal case - just update game state with the selected card
+      this.gameState = selectCard(this.gameState, cardId);
+    }
 
     // After selecting the second card, check for a match
     if (this.gameState.selectedCardIds.length === 2) {
