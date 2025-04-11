@@ -79,8 +79,14 @@ img {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.flip-card.revealed .flip-card-inner {
+/* Counter-clockwise flip (default) */
+.flip-card.revealed[data-flip-direction="normal"] .flip-card-inner {
     transform: rotateY(180deg);
+}
+
+/* Clockwise flip */
+.flip-card.revealed[data-flip-direction="reverse"] .flip-card-inner {
+    transform: rotateY(-180deg);
 }
 
 .flip-card-front,
