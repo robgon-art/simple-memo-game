@@ -28,9 +28,11 @@ body {
   padding: 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-width: 320px;
   min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background-color: #e5e5f7;
   background-image: radial-gradient(#444cf7 0.5px, #e5e5f7 0.5px);
   background-size: 10px 10px;

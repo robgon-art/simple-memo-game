@@ -23,13 +23,14 @@ export class Grid extends LitElement {
   updateCardSizes() {
     // Get container dimensions
     const containerWidth = this.clientWidth;
-    const containerHeight = this.clientHeight || window.innerHeight * 0.8; // Fallback if height is 0
+    // Use 95% of the viewport height for cards
+    const containerHeight = window.innerHeight * 0.95;
 
     // Define grid dimensions
-    const columns = 6;
-    const rows = 4;
-    const gap = 20;
-    const padding = 20;
+    const columns = 8;
+    const rows = 3;
+    const gap = 12;
+    const padding = 8;
 
     // Calculate available space
     const availableWidth = containerWidth - (padding * 2) - (gap * (columns - 1));
@@ -72,8 +73,8 @@ export class Grid extends LitElement {
   static styles = css`
     :host {
       display: block;
-      width: 100%;
-      max-width: 1200px;
+      width: 98%;
+      max-width: 1600px;
       margin: 0 auto;
       --card-width: 160px;
       --card-height: 213px;
@@ -81,10 +82,10 @@ export class Grid extends LitElement {
 
     .grid-container {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      grid-template-rows: repeat(4, 1fr);
-      gap: 20px;
-      padding: 20px;
+      grid-template-columns: repeat(8, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 12px;
+      padding: 8px;
     }
 
     /* Make sure flip-card elements adjust to grid cell size */
@@ -96,16 +97,23 @@ export class Grid extends LitElement {
 
     @media (max-width: 1200px) {
       .grid-container {
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+      }
+    }
+
+    @media (max-width: 900px) {
+      .grid-container {
         grid-template-columns: repeat(4, 1fr);
         grid-template-rows: repeat(6, 1fr);
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 600px) {
       .grid-container {
         grid-template-columns: repeat(3, 1fr);
         grid-template-rows: repeat(8, 1fr);
-        gap: 10px;
+        gap: 8px;
       }
     }
 

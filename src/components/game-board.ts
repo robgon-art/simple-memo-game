@@ -95,41 +95,41 @@ export class GameBoard extends LitElement {
   }
 
   static styles = css`
+    :host {
+      display: block;
+      margin: 0 auto;
+      padding: 3px;
+      box-sizing: border-box;
+      width: 100%;
+      height: 100%;
+    }
+
+    .memory-game {
+      width: 100%;
+      max-width: 1600px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      margin: 0 0 3px 0;
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+    }
+
+    @media (max-width: 600px) {
       :host {
-        display: block;
-        margin: 0 auto;
-        padding: 20px;
-        box-sizing: border-box;
-        width: 100%;
-        height: 100%;
+        padding: 2px;
       }
-
-      .memory-game {
-        width: 100%;
-        max-width: 1200px;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
-
+      
       h1 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 20px;
-        font-size: clamp(1.5rem, 4vw, 2.5rem);
+        margin: 0 0 2px 0;
       }
-
-      @media (max-width: 600px) {
-        :host {
-          padding: 10px;
-        }
-        
-        h1 {
-          margin-bottom: 10px;
-        }
-      }
-    `;
+    }
+  `;
 }
 
 declare global {
