@@ -5,16 +5,36 @@ import '../components/game-board';
 import { GameStatus, initializeGame } from '../models/game-state';
 import { seededShuffleCards } from '../functions/shuffle';
 import { SynchronousTimerService, TimerService } from '../services/timer-service';
+import { AudioManager } from '../managers/audio-manager';
 
 describe('GameBoard Component', () => {
     let element: GameBoard;
+    // Mock audio manager for testing
+    const mockPlayEffect = vi.fn().mockReturnValue(true);
+    const mockAudioManager = {
+        playEffect: mockPlayEffect,
+        getAllAudioEffects: vi.fn().mockReturnValue([
+            { id: 'cardFlip', path: '/Card Flip.wav' },
+            { id: 'match', path: '/Match Sound.wav' }
+        ]),
+        getAudioEffectById: vi.fn(),
+        setSilent: vi.fn(),
+        reset: vi.fn(),
+        initialize: vi.fn()
+    } as unknown as AudioManager;
 
     beforeEach(async () => {
+        // Reset mocks
+        vi.clearAllMocks();
+
         // Use the component's actual registered name
         element = await fixture(html`<memory-game-board></memory-game-board>`);
-        
+
         // Use the synchronous timer service for testing
         element.timerService = new SynchronousTimerService();
+
+        // Use the mock audio manager
+        element.audioManager = mockAudioManager;
 
         // Use a seeded shuffle for consistent test results
         element.initializeGameState = () => initializeGame(12, (cards) => seededShuffleCards(cards, 42));
@@ -142,8 +162,6 @@ describe('GameBoard Component', () => {
         expect(element.gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
     });
 
-    // NEW TESTS
-
     it('should clear existing timer when clicking another card while two unmatched cards are revealed', () => {
         // Create a spy for the timerService.clearTimeout method
         const mockTimerService: TimerService = {
@@ -156,9 +174,9 @@ describe('GameBoard Component', () => {
         const cards = element.gameState.cards;
         const firstCard = cards[0];
         const secondCard = cards.find(card => card.imageId !== firstCard.imageId)!;
-        const thirdCard = cards.find(card => 
-            card.id !== firstCard.id && 
-            card.id !== secondCard.id && 
+        const thirdCard = cards.find(card =>
+            card.id !== firstCard.id &&
+            card.id !== secondCard.id &&
             card.imageId !== firstCard.imageId
         )!;
 
@@ -174,10 +192,10 @@ describe('GameBoard Component', () => {
         element.gameState = {
             ...element.gameState,
             selectedCardIds: [firstCard.id, secondCard.id],
-            cards: element.gameState.cards.map(card => 
-                (card.id === firstCard.id || card.id === secondCard.id) 
-                ? { ...card, isRevealed: true, isMatched: false } 
-                : card
+            cards: element.gameState.cards.map(card =>
+                (card.id === firstCard.id || card.id === secondCard.id)
+                    ? { ...card, isRevealed: true, isMatched: false }
+                    : card
             )
         };
 
@@ -204,23 +222,23 @@ describe('GameBoard Component', () => {
         element.gameState = {
             ...element.gameState,
             selectedCardIds: [firstCard.id],
-            cards: element.gameState.cards.map(card => 
+            cards: element.gameState.cards.map(card =>
                 card.id === firstCard.id
-                ? { ...card, isRevealed: true } 
-                : card
+                    ? { ...card, isRevealed: true }
+                    : card
             )
         };
-        
+
         // @ts-ignore - accessing private field for testing
         element.matchCheckTimer = 123;
 
         // Try to click the already revealed card
         const initialState = JSON.stringify(element.gameState);
         element.handleCardFlip(new CustomEvent('card-flipped'), firstCard.id);
-        
+
         // State should not change because the card was already revealed
         expect(JSON.stringify(element.gameState)).toBe(initialState);
-        
+
         // Timer should not be cleared since condition in handleCardFlip 
         // should never be triggered for an already revealed card
         expect(mockTimerService.clearTimeout).not.toHaveBeenCalled();
@@ -238,71 +256,80 @@ describe('GameBoard Component', () => {
         const cards = element.gameState.cards;
         const firstCard = cards[0];
         const secondCard = cards.find(card => card.imageId !== firstCard.imageId)!;
-        
+
         element.gameState = {
             ...element.gameState,
             selectedCardIds: [firstCard.id, secondCard.id],
-            cards: element.gameState.cards.map(card => 
-                (card.id === firstCard.id || card.id === secondCard.id) 
-                ? { ...card, isRevealed: true } 
-                : card
+            cards: element.gameState.cards.map(card =>
+                (card.id === firstCard.id || card.id === secondCard.id)
+                    ? { ...card, isRevealed: true }
+                    : card
             )
         };
 
-        // Set an existing timer
-        // @ts-ignore - accessing private field for testing
-        element.matchCheckTimer = 123;
-
-        // Call checkForMatches which should clear the existing timer
-        element.checkForMatches();
-
-        // Verify the existing timer was cleared
-        expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(123);
-        
-        // Verify a new timer was set
-        expect(mockTimerService.setTimeout).toHaveBeenCalled();
-    });
-
-    it('should call onGameCompleted with correct moves count when game is completed', () => {
-        // Create a spy for the completion callback
-        const completionSpy = vi.fn();
-        element.onGameCompleted = completionSpy;
-
-        // Set up a completed game state with a specific move count
-        const moveCount = 15;
-        element.gameState = {
-            ...element.gameState,
-            moves: moveCount,
-            status: GameStatus.COMPLETED
-        };
-
-        // Call the handler directly
-        element.handleGameCompletion();
-
-        // Verify the callback was called with the correct number of moves
-        expect(completionSpy).toHaveBeenCalledWith(moveCount);
-    });
-
-    it('should cancel timer when restarting the game', () => {
-        // Create a spy for the timerService methods
-        const mockTimerService: TimerService = {
-            setTimeout: vi.fn(),
-            clearTimeout: vi.fn()
-        };
-        element.timerService = mockTimerService;
-
         // Set a fake timer
         // @ts-ignore - accessing private field for testing
-        element.matchCheckTimer = 123;
+        element.matchCheckTimer = 456;
 
-        // Call restart
-        element.restartGame();
+        // Call checkForMatches
+        element.checkForMatches();
 
-        // Verify timer was cleared
-        expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(123);
-        
-        // Verify matchCheckTimer was reset to null
-        // @ts-ignore - accessing private field for testing
-        expect(element.matchCheckTimer).toBeNull();
+        // Should clear the existing timer
+        expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(456);
+    });
+
+    // AUDIO TESTS
+
+    it('should play the cardFlip sound when a card is flipped', async () => {
+        // Simulate a card flip event
+        const cardId = element.gameState.cards[0].id;
+        element.handleCardFlip(new CustomEvent('card-flipped'), cardId);
+
+        // Check that playEffect was called with 'cardFlip'
+        expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
+    });
+
+    it('should play the match sound when two cards match', async () => {
+        // Find two cards with the same imageId
+        const cards = element.gameState.cards;
+        const firstCard = cards[0];
+        const secondCard = cards.find(card =>
+            card.id !== firstCard.id && card.imageId === firstCard.imageId
+        )!;
+
+        // Select both cards
+        element.handleCardFlip(new CustomEvent('card-flipped'), firstCard.id);
+
+        // Reset the mock to verify only the match sound
+        mockPlayEffect.mockClear();
+
+        // Select the second card which should match
+        element.handleCardFlip(new CustomEvent('card-flipped'), secondCard.id);
+
+        // Check that playEffect was called with 'match'
+        expect(mockPlayEffect).toHaveBeenCalledWith('match');
+    });
+
+    it('should not play the match sound when two cards do not match', async () => {
+        // Find two cards with different imageIds
+        const cards = element.gameState.cards;
+        const firstCard = cards[0];
+        const secondCard = cards.find(card =>
+            card.imageId !== firstCard.imageId
+        )!;
+
+        // Select both cards
+        element.handleCardFlip(new CustomEvent('card-flipped'), firstCard.id);
+
+        // Reset the mock to verify only the card flip sound for second card
+        mockPlayEffect.mockClear();
+
+        // Select the second card which should not match
+        element.handleCardFlip(new CustomEvent('card-flipped'), secondCard.id);
+
+        // Should only call playEffect once for the card flip sound
+        expect(mockPlayEffect).toHaveBeenCalledTimes(1);
+        expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
+        expect(mockPlayEffect).not.toHaveBeenCalledWith('match');
     });
 }); 

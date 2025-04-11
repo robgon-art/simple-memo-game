@@ -9,6 +9,7 @@ import { processMatches } from '../functions/match-checking';
 import { clearSelectedCards } from '../functions/card-selection';
 import { shuffleCards } from '../functions/shuffle';
 import imageManager from '../managers/image-manager';
+import { AudioManager, audioManager as defaultAudioManager } from '../managers/audio-manager';
 import { TimerService, defaultTimerService } from '../services/timer-service';
 
 // GameCompletionCallback type for easier testing of game completion
@@ -20,6 +21,9 @@ export class GameBoard extends LitElement {
 
   @property({ type: Object })
   timerService: TimerService = defaultTimerService;
+
+  @property({ type: Object })
+  audioManager: AudioManager = defaultAudioManager;
 
   @property({ type: Function })
   onGameCompleted: GameCompletionCallback = (moves) => {
@@ -49,6 +53,9 @@ export class GameBoard extends LitElement {
   handleCardFlip(event: CustomEvent, cardId: number) {
     // Prevent default handling
     event.stopPropagation();
+
+    // Play card flip sound
+    this.audioManager.playEffect('cardFlip');
 
     // If there's a pending timer for clearing mismatched cards
     // and the user clicks a new card, clear the cards immediately
@@ -91,6 +98,13 @@ export class GameBoard extends LitElement {
   checkForMatches() {
     // Process matches in the current game state
     const updatedState = processMatches(this.gameState);
+
+    // If there was a match, play match sound
+    if (updatedState.selectedCardIds.length === 0 &&
+      this.gameState.selectedCardIds.length === 2) {
+      this.audioManager.playEffect('match');
+    }
+
     this.gameState = updatedState;
 
     // If there was no match, set a timer to flip the cards back
