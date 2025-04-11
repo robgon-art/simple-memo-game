@@ -36,6 +36,17 @@ export class GameBoard extends LitElement {
     // Prevent default handling
     event.stopPropagation();
 
+    // If there's a pending timer for clearing mismatched cards
+    // and the user clicks a new card, clear the cards immediately
+    if (this.matchCheckTimer !== null && this.gameState.selectedCardIds.length === 2 && !this.gameState.cards.find(card => card.id === cardId)?.isRevealed) {
+      // Clear the timeout
+      window.clearTimeout(this.matchCheckTimer);
+      this.matchCheckTimer = null;
+      
+      // Reset the mismatched cards
+      this.gameState = clearSelectedCards(this.gameState);
+    }
+
     // Update game state with the selected card
     this.gameState = selectCard(this.gameState, cardId);
 
