@@ -4,9 +4,9 @@ import './components/card.ts'
 import { imageManager } from './managers/image-manager.ts'
 
 // Detect if we're in a test environment (either Node.js or via Vitest)
-const isTestEnvironment = typeof process !== 'undefined' || 
-                         (typeof window !== 'undefined' && 
-                          typeof (window as any).__vitest__ !== 'undefined');
+const isTestEnvironment = typeof process !== 'undefined' ||
+  (typeof window !== 'undefined' &&
+    typeof (window as any).__vitest__ !== 'undefined');
 
 // Only log in non-test environments
 if (!isTestEnvironment) {

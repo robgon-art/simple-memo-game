@@ -72,7 +72,7 @@ Each phase will follow functional programming principles including:
 │   │   └── game-board.test.ts   # Game board component tests
 │   │
 │   ├── models/
-│   │   ├── game-state.ts        # Immutable game state model
+│   │   ├── game-state.ts        # Game state model
 │   │   └── game-state.test.ts   # Game state model tests
 │   │
 │   ├── functions/
