@@ -1,5 +1,5 @@
 import { LitElement, html, unsafeCSS } from 'lit';
-import { customElement, state } from 'lit/decorators.js';
+import { customElement, state, property } from 'lit/decorators.js';
 import './grid';
 import './card';
 import gameBoardStyles from './game-board.css?inline';
@@ -9,13 +9,27 @@ import { processMatches } from '../functions/match-checking';
 import { clearSelectedCards } from '../functions/card-selection';
 import { shuffleCards } from '../functions/shuffle';
 import imageManager from '../managers/image-manager';
+import { TimerService, defaultTimerService } from '../services/timer-service';
+
+// GameCompletionCallback type for easier testing of game completion
+export type GameCompletionCallback = (moves: number) => void;
 
 @customElement('memory-game-board')
 export class GameBoard extends LitElement {
   @state() gameState: GameState;
+
+  @property({ type: Object })
+  timerService: TimerService = defaultTimerService;
+
+  @property({ type: Function })
+  onGameCompleted: GameCompletionCallback = (moves) => {
+    console.log(`Game completed in ${moves} moves!`);
+  };
+
   private backImage = '/Back Side.jpg';
   private backAlt = 'Card Back';
   private matchCheckTimer: number | null = null;
+  private revealDelay = 2000; // Time in ms to keep unmatched cards revealed
 
   constructor() {
     super();
@@ -40,9 +54,9 @@ export class GameBoard extends LitElement {
     // and the user clicks a new card, clear the cards immediately
     if (this.matchCheckTimer !== null && this.gameState.selectedCardIds.length === 2 && !this.gameState.cards.find(card => card.id === cardId)?.isRevealed) {
       // Clear the timeout
-      window.clearTimeout(this.matchCheckTimer);
+      this.timerService.clearTimeout(this.matchCheckTimer);
       this.matchCheckTimer = null;
-      
+
       // Reset the mismatched cards
       this.gameState = clearSelectedCards(this.gameState);
     }
@@ -68,14 +82,14 @@ export class GameBoard extends LitElement {
     if (this.gameState.selectedCardIds.length === 2) {
       // Cancel any existing timer
       if (this.matchCheckTimer !== null) {
-        window.clearTimeout(this.matchCheckTimer);
+        this.timerService.clearTimeout(this.matchCheckTimer);
       }
 
-      // Set a new timer to flip cards back after 2 seconds
-      this.matchCheckTimer = window.setTimeout(() => {
+      // Set a new timer to flip cards back after the delay
+      this.matchCheckTimer = this.timerService.setTimeout(() => {
         this.gameState = clearSelectedCards(this.gameState);
         this.matchCheckTimer = null;
-      }, 2000);
+      }, this.revealDelay);
     }
 
     // Check for game completion
@@ -87,10 +101,9 @@ export class GameBoard extends LitElement {
   /**
    * Handle game completion
    */
-  private handleGameCompletion() {
-    // For now, just log game completion
-    console.log(`Game completed in ${this.gameState.moves} moves!`);
-    // In the future, this could show a celebration animation or modal
+  handleGameCompletion() {
+    // Call the completion callback
+    this.onGameCompleted(this.gameState.moves);
   }
 
   /**
@@ -99,7 +112,7 @@ export class GameBoard extends LitElement {
   restartGame() {
     // Cancel any pending timers
     if (this.matchCheckTimer !== null) {
-      window.clearTimeout(this.matchCheckTimer);
+      this.timerService.clearTimeout(this.matchCheckTimer);
       this.matchCheckTimer = null;
     }
 

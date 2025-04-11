@@ -1,43 +1,24 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fixture, html } from '@open-wc/testing';
 import { GameBoard } from './game-board';
 import '../components/game-board';
 import { GameStatus, initializeGame } from '../models/game-state';
 import { seededShuffleCards } from '../functions/shuffle';
+import { SynchronousTimerService, TimerService } from '../services/timer-service';
 
 describe('GameBoard Component', () => {
     let element: GameBoard;
 
-    // For type safety with the mocks
-    type TimeoutId = ReturnType<typeof setTimeout>;
-
     beforeEach(async () => {
         // Use the component's actual registered name
         element = await fixture(html`<memory-game-board></memory-game-board>`);
-
-        // Mock setTimeout
-        vi.spyOn(window, 'setTimeout').mockImplementation((callback: TimerHandler, _?: number) => {
-            // Execute callback immediately for testing
-            if (typeof callback === 'function') {
-                callback();
-            } else if (typeof callback === 'string') {
-                eval(callback);
-            }
-            return 1 as unknown as TimeoutId; // Dummy ID
-        });
-
-        // Mock clearTimeout
-        vi.spyOn(window, 'clearTimeout').mockImplementation(() => {
-            // Do nothing in tests
-        });
+        
+        // Use the synchronous timer service for testing
+        element.timerService = new SynchronousTimerService();
 
         // Use a seeded shuffle for consistent test results
         element.initializeGameState = () => initializeGame(12, (cards) => seededShuffleCards(cards, 42));
         element.gameState = element.initializeGameState();
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
     });
 
     it('should initialize with a valid game state', () => {
@@ -106,7 +87,7 @@ describe('GameBoard Component', () => {
         element.handleCardFlip(new CustomEvent('card-flipped'), firstCard.id);
         element.handleCardFlip(new CustomEvent('card-flipped'), secondCard.id);
 
-        // With our mock implementation, setTimeout executes immediately
+        // With our synchronous timer service, the callback executes immediately
         // so the cards should already be flipped back
 
         // Cards should now be flipped back (not revealed)
@@ -118,8 +99,9 @@ describe('GameBoard Component', () => {
     });
 
     it('should detect game completion when all cards are matched', async () => {
-        // Mock console.log to verify game completion message
-        const consoleLogSpy = vi.spyOn(console, 'log');
+        // Create a spy for the onGameCompleted callback
+        const completionSpy = vi.fn();
+        element.onGameCompleted = completionSpy;
 
         // Manually set all cards to matched state
         const allMatched = {
@@ -134,8 +116,8 @@ describe('GameBoard Component', () => {
         // Call checkForMatches to trigger the game completion handler
         element.checkForMatches();
 
-        // Check that game completion was detected and logged
-        expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('Game completed'));
+        // Check that game completion callback was called
+        expect(completionSpy).toHaveBeenCalledWith(allMatched.moves);
     });
 
     it('should restart the game when restart button is clicked', async () => {
@@ -158,5 +140,169 @@ describe('GameBoard Component', () => {
         expect(element.gameState.selectedCardIds).toEqual([]);
         expect(element.gameState.status).toBe(GameStatus.IN_PROGRESS);
         expect(element.gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
+    });
+
+    // NEW TESTS
+
+    it('should clear existing timer when clicking another card while two unmatched cards are revealed', () => {
+        // Create a spy for the timerService.clearTimeout method
+        const mockTimerService: TimerService = {
+            setTimeout: vi.fn().mockReturnValue(123),
+            clearTimeout: vi.fn()
+        };
+        element.timerService = mockTimerService;
+
+        // Find three cards with different imageIds
+        const cards = element.gameState.cards;
+        const firstCard = cards[0];
+        const secondCard = cards.find(card => card.imageId !== firstCard.imageId)!;
+        const thirdCard = cards.find(card => 
+            card.id !== firstCard.id && 
+            card.id !== secondCard.id && 
+            card.imageId !== firstCard.imageId
+        )!;
+
+        // Select first and second card (which don't match)
+        element.handleCardFlip(new CustomEvent('card-flipped'), firstCard.id);
+        element.handleCardFlip(new CustomEvent('card-flipped'), secondCard.id);
+
+        // Set a fake timer (normally done by checkForMatches)
+        // @ts-ignore - accessing private field for testing
+        element.matchCheckTimer = 123;
+
+        // Manually set cards to be revealed but not matched
+        element.gameState = {
+            ...element.gameState,
+            selectedCardIds: [firstCard.id, secondCard.id],
+            cards: element.gameState.cards.map(card => 
+                (card.id === firstCard.id || card.id === secondCard.id) 
+                ? { ...card, isRevealed: true, isMatched: false } 
+                : card
+            )
+        };
+
+        // Click third card while two unmatched cards are revealed
+        element.handleCardFlip(new CustomEvent('card-flipped'), thirdCard.id);
+
+        // Verify clearTimeout was called
+        expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(123);
+    });
+
+    it('should ignore clicks on already revealed cards', () => {
+        // Create a spy for the functions we need to test
+        const mockTimerService: TimerService = {
+            setTimeout: vi.fn().mockReturnValue(123),
+            clearTimeout: vi.fn()
+        };
+        element.timerService = mockTimerService;
+
+        // Find a card to use in the test
+        const cards = element.gameState.cards;
+        const firstCard = cards[0];
+
+        // Manually set up the state with one revealed card
+        element.gameState = {
+            ...element.gameState,
+            selectedCardIds: [firstCard.id],
+            cards: element.gameState.cards.map(card => 
+                card.id === firstCard.id
+                ? { ...card, isRevealed: true } 
+                : card
+            )
+        };
+        
+        // @ts-ignore - accessing private field for testing
+        element.matchCheckTimer = 123;
+
+        // Try to click the already revealed card
+        const initialState = JSON.stringify(element.gameState);
+        element.handleCardFlip(new CustomEvent('card-flipped'), firstCard.id);
+        
+        // State should not change because the card was already revealed
+        expect(JSON.stringify(element.gameState)).toBe(initialState);
+        
+        // Timer should not be cleared since condition in handleCardFlip 
+        // should never be triggered for an already revealed card
+        expect(mockTimerService.clearTimeout).not.toHaveBeenCalled();
+    });
+
+    it('should clear existing timer in checkForMatches if there is one', () => {
+        // Create a spy for the timerService methods
+        const mockTimerService: TimerService = {
+            setTimeout: vi.fn().mockReturnValue(456),
+            clearTimeout: vi.fn()
+        };
+        element.timerService = mockTimerService;
+
+        // Set up initial state with two selected cards
+        const cards = element.gameState.cards;
+        const firstCard = cards[0];
+        const secondCard = cards.find(card => card.imageId !== firstCard.imageId)!;
+        
+        element.gameState = {
+            ...element.gameState,
+            selectedCardIds: [firstCard.id, secondCard.id],
+            cards: element.gameState.cards.map(card => 
+                (card.id === firstCard.id || card.id === secondCard.id) 
+                ? { ...card, isRevealed: true } 
+                : card
+            )
+        };
+
+        // Set an existing timer
+        // @ts-ignore - accessing private field for testing
+        element.matchCheckTimer = 123;
+
+        // Call checkForMatches which should clear the existing timer
+        element.checkForMatches();
+
+        // Verify the existing timer was cleared
+        expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(123);
+        
+        // Verify a new timer was set
+        expect(mockTimerService.setTimeout).toHaveBeenCalled();
+    });
+
+    it('should call onGameCompleted with correct moves count when game is completed', () => {
+        // Create a spy for the completion callback
+        const completionSpy = vi.fn();
+        element.onGameCompleted = completionSpy;
+
+        // Set up a completed game state with a specific move count
+        const moveCount = 15;
+        element.gameState = {
+            ...element.gameState,
+            moves: moveCount,
+            status: GameStatus.COMPLETED
+        };
+
+        // Call the handler directly
+        element.handleGameCompletion();
+
+        // Verify the callback was called with the correct number of moves
+        expect(completionSpy).toHaveBeenCalledWith(moveCount);
+    });
+
+    it('should cancel timer when restarting the game', () => {
+        // Create a spy for the timerService methods
+        const mockTimerService: TimerService = {
+            setTimeout: vi.fn(),
+            clearTimeout: vi.fn()
+        };
+        element.timerService = mockTimerService;
+
+        // Set a fake timer
+        // @ts-ignore - accessing private field for testing
+        element.matchCheckTimer = 123;
+
+        // Call restart
+        element.restartGame();
+
+        // Verify timer was cleared
+        expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(123);
+        
+        // Verify matchCheckTimer was reset to null
+        // @ts-ignore - accessing private field for testing
+        expect(element.matchCheckTimer).toBeNull();
     });
 }); 
