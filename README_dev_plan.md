@@ -92,9 +92,6 @@ Each phase will follow functional programming principles including:
 │   │   ├── timer.test.ts        # Timer tests
 │   │   └── storage.ts           # Local storage utilities
 │   │
-│   ├── styles/
-│   │   └── game-styles.ts       # Shared styles
-│   │
 │   ├── index.ts                 # Main application entry point
 │   └── index.test.ts            # Integration tests
 │
