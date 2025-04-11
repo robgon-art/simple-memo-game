@@ -1,222 +1,204 @@
 import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
-import { imageManager } from './image-manager';
+import { imageManager, ImageManager, isTestEnvironment, extractNameFromPath, createCardImage, loadCardImages, logImages, logError, CardImage } from './image-manager';
 
 // Explicitly ensure silent mode is set
 imageManager.setSilent(true);
 
-describe('ImageManager', () => {
-    // Also set silent mode in beforeAll to be safe
-    beforeAll(() => {
-        imageManager.setSilent(true);
-    });
-
+describe('ImageManager Module', () => {
+    // Reset spies after each test
     afterEach(() => {
         vi.restoreAllMocks();
-        // Reset silent mode after each test
-        imageManager.setSilent(true);
     });
 
-    describe('initialization', () => {
-        it('has already loaded images (singleton pattern)', () => {
-            // Since imageManager is a singleton that initializes on import,
-            // we verify that it has already loaded the images
-            expect(imageManager.getAllCardImages()).to.have.lengthOf(12);
+    describe('Pure Functions', () => {
+        it('isTestEnvironment returns true in test environment', () => {
+            expect(isTestEnvironment()).toBe(true);
         });
 
-        it('allows setting silent mode via setSilent', () => {
-            // Test the setSilent method's functionality
-            // First spy on console.log to prevent actual logging during test
-            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+        it('extractNameFromPath properly extracts name from path', () => {
+            const path = '/cards/The Starry Night, Vincent van Gogh, 1889.jpg';
+            const name = extractNameFromPath(path);
+            expect(name).toBe('The Starry Night');
+            
+            // Test with short name
+            const shortPath = '/cards/Mona Lisa.jpg';
+            expect(extractNameFromPath(shortPath)).toBe('Mona Lisa');
+            
+            // Test with very long name (takes only first 3 words)
+            const longPath = '/cards/A Very Long Title That Should Be Truncated.jpg';
+            expect(extractNameFromPath(longPath)).toBe('A Very Long');
+        });
 
-            // Set silent to false and call a method to trigger potential logging
-            imageManager.setSilent(false);
+        it('createCardImage creates a card image object', () => {
+            const path = '/cards/The Starry Night, Vincent van Gogh, 1889.jpg';
+            const index = 5;
+            const image = createCardImage(path, index);
+            
+            expect(image).toEqual({
+                id: 6, // index + 1
+                name: 'The Starry Night',
+                path: path
+            });
+        });
 
-            // Creating a mock constructor call to trigger logging
-            // We can do this by forcing a "reload" by accessing getAllCardImages
-            // which will internally use the loaded images
-            imageManager.getAllCardImages();
+        it('loadCardImages returns an array of all card images', () => {
+            const images = loadCardImages();
+            expect(images).toBeInstanceOf(Array);
+            expect(images.length).toBe(12);
+            
+            // Check first and last image to ensure they're properly formed
+            expect(images[0].name).toContain('Sunday');
+            expect(images[11].name).toContain('Impression');
+        });
 
-            // In a real scenario, logging would be done during initialization
-            // We're checking if consoleLogSpy was at least defined properly
-            expect(consoleLogSpy).toBeDefined();
+        it('logImages logs images when not silent', () => {
+            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            const images: CardImage[] = [
+                { id: 1, name: 'Test Image', path: '/test.jpg' }
+            ];
+            
+            // Test with silent false
+            logImages(images, false);
+            expect(consoleLogSpy).toHaveBeenCalled();
+            
+            // Test with silent true
+            consoleLogSpy.mockClear();
+            logImages(images, true);
+            expect(consoleLogSpy).not.toHaveBeenCalled();
+        });
 
-            // Restore silent mode
+        it('logError logs errors when not silent', () => {
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const error = new Error('Test error');
+            
+            // Test with silent false
+            logError(error, false);
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            
+            // Test with silent true
+            consoleErrorSpy.mockClear();
+            logError(error, true);
+            expect(consoleErrorSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('ImageManager Constructor', () => {
+        it('creates a new instance with default settings', () => {
+            const manager = new ImageManager();
+            expect(manager.getAllCardImages()).toHaveLength(12);
+        });
+
+        it('accepts config to set silent mode', () => {
+            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            
+            // Should log when silent is false
+            new ImageManager({ silent: false });
+            expect(consoleLogSpy).toHaveBeenCalled();
+            
+            // Should not log when silent is true
+            consoleLogSpy.mockClear();
+            new ImageManager({ silent: true });
+            expect(consoleLogSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('ImageManager Error Handling', () => {
+        it('handles errors during initialization', () => {
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            
+            // Directly test the error logging function
+            const testError = new Error('Test error');
+            logError(testError, false);
+            
+            // Error should be logged
+            expect(consoleErrorSpy).toHaveBeenCalled();
+            expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading card images:', testError);
+            
+            // Clean up
+            consoleErrorSpy.mockRestore();
+        });
+    });
+
+    describe('Singleton imageManager', () => {
+        beforeAll(() => {
             imageManager.setSilent(true);
         });
-    });
 
-    describe('error handling', () => {
-        it('handles errors gracefully', () => {
-            // Create a spy for console.error
-            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+        it('is an instance of ImageManager', () => {
+            expect(imageManager).toBeInstanceOf(ImageManager);
+        });
 
-            // Set silent to false to enable error logging
-            imageManager.setSilent(false);
-
-            // Create a simulated error by making a method throw an error
-            const originalGetAllCardImages = imageManager.getAllCardImages;
-            imageManager.getAllCardImages = vi.fn().mockImplementation(() => {
-                throw new Error('Test error');
-            });
-
-            // Try to access the images which will throw an error
-            try {
-                imageManager.getAllCardImages();
-            } catch (e) {
-                // Expected error
-            }
-
-            // Restore the original method
-            imageManager.getAllCardImages = originalGetAllCardImages;
-
-            // Verify console.error spy was defined
-            expect(consoleErrorSpy).toBeDefined();
-
-            // Restore silent mode
-            imageManager.setSilent(true);
+        it('can be reset', () => {
+            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            
+            // Reset with silent false
+            imageManager.reset({ silent: false });
+            expect(consoleLogSpy).toHaveBeenCalled();
+            
+            // Reset back to silent mode
+            imageManager.reset({ silent: true });
         });
     });
 
-    describe('getAllCardImages', () => {
-        it('returns all card images', () => {
-            const images = imageManager.getAllCardImages();
-            expect(images).to.be.an('array');
-            expect(images).to.have.lengthOf(12);
-
-            // Check if images have the expected structure
-            const firstImage = images[0];
-            expect(firstImage).to.have.property('id');
-            expect(firstImage).to.have.property('name');
-            expect(firstImage).to.have.property('path');
+    describe('ImageManager Instance Methods', () => {
+        let manager: ImageManager;
+        
+        beforeAll(() => {
+            manager = new ImageManager({ silent: true });
         });
-
-        it('returns a copy of the card images array', () => {
-            const images1 = imageManager.getAllCardImages();
-            const images2 = imageManager.getAllCardImages();
-
-            // Should return a new array instance each time
-            expect(images1).to.not.equal(images2);
-
-            // But the content should be the same
-            expect(images1).to.deep.equal(images2);
+        
+        it('getAllCardImages returns a copy of all images', () => {
+            const images1 = manager.getAllCardImages();
+            const images2 = manager.getAllCardImages();
+            
+            expect(images1).toHaveLength(12);
+            expect(images1).not.toBe(images2);
+            expect(images1).toEqual(images2);
         });
-    });
-
-    describe('getCardImageById', () => {
-        it('returns the correct card image by ID', () => {
-            // Get an image with ID 1
-            const image = imageManager.getCardImageById(1);
-
-            expect(image).to.not.be.undefined;
-            expect(image?.id).to.equal(1);
-            expect(image?.name).to.include('Sunday');
-            expect(image?.path).to.include('A Sunday Afternoon');
+        
+        it('getCardImageById returns correct image', () => {
+            const image = manager.getCardImageById(1);
+            expect(image).toBeDefined();
+            expect(image?.id).toBe(1);
+            
+            // Non-existent ID
+            expect(manager.getCardImageById(999)).toBeUndefined();
         });
-
-        it('returns undefined for non-existent ID', () => {
-            // Try to get an image with an ID that doesn't exist
-            const image = imageManager.getCardImageById(999);
-
-            expect(image).to.be.undefined;
+        
+        it('getCardBackImagePath returns the back image path', () => {
+            expect(manager.getCardBackImagePath()).toBe('/Back Side.jpg');
         });
-    });
-
-    describe('getCardBackImagePath', () => {
-        it('returns the correct back image path', () => {
-            const backImagePath = imageManager.getCardBackImagePath();
-
-            expect(backImagePath).to.equal('/Back Side.jpg');
-        });
-    });
-
-    describe('getCardPairs', () => {
-        it('returns pairs of all card images (24 cards total)', () => {
-            const pairs = imageManager.getCardPairs();
-
-            // Should return 24 cards (12 pairs)
-            expect(pairs).to.have.lengthOf(24);
-
-            // Check that every card appears exactly twice
-            const counts = new Map<number, number>();
-
-            pairs.forEach(card => {
-                const id = card.id;
-                counts.set(id, (counts.get(id) || 0) + 1);
-            });
-
+        
+        it('getCardPairs returns pairs of all images', () => {
+            const pairs = manager.getCardPairs();
+            
+            // Should have 24 cards (12 pairs)
+            expect(pairs).toHaveLength(24);
+            
             // Each ID should appear exactly twice
-            counts.forEach((count, id) => {
-                expect(count).to.equal(2, `Card with ID ${id} should appear exactly twice`);
+            const counts = new Map<number, number>();
+            pairs.forEach(card => {
+                counts.set(card.id, (counts.get(card.id) || 0) + 1);
+            });
+            
+            counts.forEach((count) => {
+                expect(count).toBe(2);
             });
         });
-
-        it('returns deep copies of the cards', () => {
-            const pairs = imageManager.getCardPairs();
-
-            // Find two cards with the same ID
-            const id = pairs[0].id;
-            const firstCard = pairs.find(card => card.id === id);
-            const secondCard = pairs.filter(card => card.id === id)[1];
-
-            expect(firstCard).to.not.be.undefined;
-            expect(secondCard).to.not.be.undefined;
-
-            // They should be distinct objects with the same properties
-            expect(firstCard).to.not.equal(secondCard);
-            expect(firstCard).to.deep.equal(secondCard);
-        });
-    });
-
-    describe('setSilent and console output', () => {
-        it('controls console output based on silent mode', () => {
-            // Spy on console.log
-            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
-
-            // Test behavior with silent mode off
-            imageManager.setSilent(false);
-
-            // We can't directly test private methods, but we can test indirectly
-            // by making a deep copy of the card images, which will trigger logging
-            // via specific code paths the implementation uses
-            imageManager.getCardPairs();
-
-            // Restore silent mode
-            imageManager.setSilent(true);
-
-            // Spy should be defined at minimum
-            expect(consoleLogSpy).toBeDefined();
-
-            // Cleanup
-            consoleLogSpy.mockRestore();
-        });
-    });
-
-    describe('loadCardImages functionality', () => {
-        it('properly extracts names from image paths', () => {
-            // Test the naming logic by checking the actual loaded images
-            const images = imageManager.getAllCardImages();
-
-            // Check a few specific images to verify naming logic
-            const sundayAfternoon = images.find(img => img.path.includes('A Sunday Afternoon'));
-            expect(sundayAfternoon).to.not.be.undefined;
-            expect(sundayAfternoon?.name).to.include('Sunday');
-
-            const starryNight = images.find(img => img.path.includes('Starry Night'));
-            expect(starryNight).to.not.be.undefined;
-            expect(starryNight?.name).to.include('Starry');
-        });
-
-        it('assigns unique IDs to all images', () => {
-            const images = imageManager.getAllCardImages();
-
-            // Get all IDs
-            const ids = images.map(img => img.id);
-
-            // Create a Set to get only unique IDs
-            const uniqueIds = new Set(ids);
-
-            // If all IDs are unique, the Set size should match the array length
-            expect(uniqueIds.size).to.equal(images.length);
+        
+        it('setSilent controls console logging', () => {
+            const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+            
+            // Turn off silent mode
+            manager.setSilent(false);
+            manager.initialize();
+            expect(consoleLogSpy).toHaveBeenCalled();
+            
+            // Turn on silent mode
+            consoleLogSpy.mockClear();
+            manager.setSilent(true);
+            manager.initialize();
+            expect(consoleLogSpy).not.toHaveBeenCalled();
         });
     });
 }); 

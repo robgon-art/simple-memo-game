@@ -4,84 +4,112 @@
  */
 
 // Define interfaces
-interface CardImage {
+export interface CardImage {
     id: number;
     name: string;
     path: string;
 }
 
-// Detect if we're in a test environment (either Node.js or via Vitest)
-const isTestEnvironment = typeof process !== 'undefined' || 
-                         (typeof window !== 'undefined' && 
-                          typeof (window as any).__vitest__ !== 'undefined');
+// Configuration options
+export interface ImageManagerConfig {
+    silent: boolean;
+}
 
-class ImageManager {
+// Pure function to detect test environment
+export const isTestEnvironment = (): boolean =>
+    typeof process !== 'undefined' ||
+    (typeof window !== 'undefined' && typeof (window as any).__vitest__ !== 'undefined');
+
+// Pure function to extract name from image path
+export const extractNameFromPath = (path: string): string => {
+    const filename = path.split('/').pop() || '';
+    
+    // Remove file extension first
+    const nameWithoutExtension = filename.replace(/\.[^.]+$/, '');
+    
+    // Then split by comma and take the first part
+    const nameParts = nameWithoutExtension.split(',')[0].trim().split(' ');
+    return nameParts.slice(0, Math.min(3, nameParts.length)).join(' ');
+};
+
+// Pure function to create a card image
+export const createCardImage = (path: string, index: number): CardImage => ({
+    id: index + 1,
+    name: extractNameFromPath(path),
+    path
+});
+
+// Pure function to load card images
+export const loadCardImages = (): CardImage[] => {
+    // In Vite, assets in the public directory are referenced directly by URL
+    const cardPaths = [
+        '/cards/A Sunday Afternoon on the Island of La Grande Jatte, Georges Seurat, 1884.jpg',
+        '/cards/Mont Sainte-Victoire, Paul Cézanne, c. 1890s.jpg',
+        '/cards/Jeanne Samary in a Low-Necked Dress, Pierre-Auguste Renoir, 1877.jpg',
+        '/cards/Children Playing on the Beach, Mary Cassatt, 1884.jpg',
+        '/cards/The Green Line, Henri Matisse, 1905.jpg',
+        '/cards/The Starry Night, Vincent van Gogh, 1889.jpg',
+        '/cards/Le Déjeuner sur l\'herbe, Édouard Manet, 1863.jpg',
+        '/cards/Dance at Bougival, Pierre-Auguste Renoir, 1883.jpg',
+        '/cards/The Ballet Class, Edgar Degas, 1873.jpg',
+        '/cards/Boulevard Montmartre, Spring, Camille Pissarro, 1897.jpg',
+        '/cards/At the Moulin Rouge - The Dance, Henri de Toulouse-Lautrec, 1890.jpg',
+        '/cards/Impression Sunrise, Claude Monet, 1872.jpg'
+    ];
+
+    // Convert the paths to CardImage objects using pure function
+    return cardPaths.map(createCardImage);
+};
+
+// Side effect: logging function
+export const logImages = (images: CardImage[], silent: boolean): void => {
+    if (silent) return;
+
+    console.log('Loaded card images:');
+    images.forEach(image => {
+        console.log(`${image.id}: ${image.name} - ${image.path}`);
+    });
+};
+
+// Side effect: error logging function
+export const logError = (error: unknown, silent: boolean): void => {
+    if (silent) return;
+    console.error('Error loading card images:', error);
+};
+
+/**
+ * ImageManager class with improved testability
+ */
+export class ImageManager {
     private cardImages: CardImage[] = [];
     private backImagePath: string = '/Back Side.jpg';
-    private silent: boolean = isTestEnvironment; // Start silent if in test environment
+    private silent: boolean;
 
-    constructor(silent?: boolean) {
-        if (silent !== undefined) {
-            this.silent = silent;
-        }
-        this.loadCardImages();
+    constructor(config?: Partial<ImageManagerConfig>) {
+        this.silent = config?.silent ?? isTestEnvironment();
+        this.initialize();
     }
 
     /**
-     * Load all card images from the public/cards directory
+     * Initialize the image manager
      */
-    private loadCardImages(): void {
+    public initialize(): void {
         try {
-            // In Vite, assets in the public directory are referenced directly by URL
-            // Since we can't use import.meta.glob on public directory, we'll use our knowledge
-            // of the existing files in the public/cards directory
-
-            const cardPaths = [
-                '/cards/A Sunday Afternoon on the Island of La Grande Jatte, Georges Seurat, 1884.jpg',
-                '/cards/Mont Sainte-Victoire, Paul Cézanne, c. 1890s.jpg',
-                '/cards/Jeanne Samary in a Low-Necked Dress, Pierre-Auguste Renoir, 1877.jpg',
-                '/cards/Children Playing on the Beach, Mary Cassatt, 1884.jpg',
-                '/cards/The Green Line, Henri Matisse, 1905.jpg',
-                '/cards/The Starry Night, Vincent van Gogh, 1889.jpg',
-                '/cards/Le Déjeuner sur l\'herbe, Édouard Manet, 1863.jpg',
-                '/cards/Dance at Bougival, Pierre-Auguste Renoir, 1883.jpg',
-                '/cards/The Ballet Class, Edgar Degas, 1873.jpg',
-                '/cards/Boulevard Montmartre, Spring, Camille Pissarro, 1897.jpg',
-                '/cards/At the Moulin Rouge - The Dance, Henri de Toulouse-Lautrec, 1890.jpg',
-                '/cards/Impression Sunrise, Claude Monet, 1872.jpg'
-            ];
-
-            // Convert the paths to CardImage objects
-            this.cardImages = cardPaths.map((path, index) => {
-                // Extract filename from path
-                const filename = path.split('/').pop() || '';
-
-                // Remove file extension and artist info for a cleaner name
-                const nameParts = filename.split(',')[0].trim().split(' ');
-
-                // Use first few words as the name to keep it short
-                const name = nameParts.slice(0, Math.min(3, nameParts.length)).join(' ');
-
-                return {
-                    id: index + 1,
-                    name: name,
-                    path: path
-                };
-            });
-
-            // Print images to debug console as requested (unless in silent mode)
-            if (!this.silent) {
-                console.log('Loaded card images:');
-                this.cardImages.forEach(image => {
-                    console.log(`${image.id}: ${image.name} - ${image.path}`);
-                });
-            }
+            this.cardImages = loadCardImages();
+            logImages(this.cardImages, this.silent);
         } catch (error) {
-            // Only log errors in non-silent mode
-            if (!this.silent) {
-                console.error('Error loading card images:', error);
-            }
+            logError(error, this.silent);
         }
+    }
+
+    /**
+     * Reset the image manager (useful for testing)
+     */
+    public reset(config?: Partial<ImageManagerConfig>): void {
+        if (config?.silent !== undefined) {
+            this.silent = config.silent;
+        }
+        this.initialize();
     }
 
     /**
@@ -117,17 +145,11 @@ class ImageManager {
      * Each card appears twice in the returned array
      */
     public getCardPairs(): CardImage[] {
-        // Create a pair of each card
-        const pairs: CardImage[] = [];
-        this.cardImages.forEach(image => {
-            // Add each image twice (for pairs)
-            pairs.push({ ...image });
-            pairs.push({ ...image });
-        });
-        return pairs;
+        // Create a pair of each card using a functional approach
+        return this.cardImages.flatMap(image => [{ ...image }, { ...image }]);
     }
 }
 
-// Export an instance of the ImageManager
+// Export an instance of the ImageManager for backward compatibility
 export const imageManager = new ImageManager();
 export default imageManager; 
