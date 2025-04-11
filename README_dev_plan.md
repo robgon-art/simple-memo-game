@@ -1,28 +1,26 @@
 # Memory Matching Game Development Plan
 
 ## Phase 1: Core Game Structure
-1. Refactor current card component into a reusable `Card` class/component
-2. Create a game state model with immutable data structures
-   - Cards array with ID, image, matched status, and revealed status
-   - Game status (in progress, completed)
-   - Turn tracking (first selected card, second selected card)
-3. Implement grid layout (6x4) component
+1. Show a single card that is flippable to show the front and back faces
+2. Refactor the card component into a reusable `Card` class/component
+3. Create an image manager to load and manage the 12 distinct card images
+4. Implement grid layout (6x4) component show all 24 flippable cards (2 each)
 
 ## Phase 2: Game Logic
-1. Create pure functions for:
+1. Create a game state model
+   - Cards array with ID, image, matched status, and revealed status
+   - Game status (in progress, completed)
+2. Create pure functions for:
    - Shuffling cards (Fisher-Yates algorithm)
    - Selecting a card
    - Checking for matches
    - Updating game state
-2. Implement turn logic:
+3. Implement turn logic:
    - First card selection
    - Second card selection
    - Match checking
    - Auto-hiding unmatched cards after 2-second delay
 
-## Phase 3: Image Management
-1. Create an image service to load and manage the 12 distinct card images
-2. Implement image preloading for better performance
 
 ## Phase 4: Testing
 1. Create unit tests for pure functions:
@@ -85,9 +83,9 @@ Each phase will follow functional programming principles including:
 │   │   ├── match-checking.ts    # Match checking function
 │   │   └── match-checking.test.ts # Match checking tests
 │   │
-│   ├── services/
-│   │   ├── image-service.ts     # Image loading and management
-│   │   └── image-service.test.ts # Image service tests
+│   ├── managers/
+│   │   ├── image-manager.ts      # Image loading and management
+│   │   └── image-manager.test.ts # Image service tests
 │   │
 │   ├── utils/
 │   │   ├── timer.ts             # Timer utility

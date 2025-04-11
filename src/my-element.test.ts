@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { fixture, html } from '@open-wc/testing';
 import './my-element.ts';
-import { MyElement } from './my-element';
+import { MyElement } from './my-element.ts';
 
 // Create a mock for the flip-card component to isolate testing
 class MockFlipCard extends HTMLElement {

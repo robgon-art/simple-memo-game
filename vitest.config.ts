@@ -14,6 +14,6 @@ export default defineConfig({
                 'vitest.config.ts',
                 'src/vite-env.d.ts'
             ]
-        }
+        },
     },
 }); 
