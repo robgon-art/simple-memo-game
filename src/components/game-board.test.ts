@@ -199,11 +199,18 @@ describe('GameBoard Component', () => {
             )
         };
 
+        // Reset the mock to verify the flip back sound
+        mockPlayEffect.mockClear();
+
         // Click third card while two unmatched cards are revealed
         element.handleCardFlip(new CustomEvent('card-flipped'), thirdCard.id);
 
         // Verify clearTimeout was called
         expect(mockTimerService.clearTimeout).toHaveBeenCalledWith(123);
+
+        // Verify flip sound was played twice (once for cards flipping back, once for new card)
+        expect(mockPlayEffect).toHaveBeenCalledTimes(2);
+        expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
     });
 
     it('should ignore clicks on already revealed cards', () => {
@@ -331,5 +338,56 @@ describe('GameBoard Component', () => {
         expect(mockPlayEffect).toHaveBeenCalledTimes(1);
         expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
         expect(mockPlayEffect).not.toHaveBeenCalledWith('match');
+    });
+
+    it('should play a sound when cards flip back automatically', () => {
+        // Use a normal timer service with a mock
+        const mockTimerService: TimerService = {
+            setTimeout: vi.fn((callback) => {
+                // Immediately execute the callback
+                callback();
+                return 789;
+            }),
+            clearTimeout: vi.fn()
+        };
+        element.timerService = mockTimerService;
+
+        // Find two cards with different imageIds
+        const cards = element.gameState.cards;
+        const firstCard = cards[0];
+        const secondCard = cards.find(card =>
+            card.imageId !== firstCard.imageId
+        )!;
+
+        // Set up the state with two selected non-matching cards
+        element.gameState = {
+            ...element.gameState,
+            selectedCardIds: [firstCard.id, secondCard.id],
+            cards: element.gameState.cards.map(card =>
+                (card.id === firstCard.id || card.id === secondCard.id)
+                    ? { ...card, isRevealed: true, isMatched: false }
+                    : card
+            )
+        };
+
+        // Reset the mock to verify only the flip back sound
+        mockPlayEffect.mockClear();
+
+        // Call checkForMatches which will set the timer and immediately run the callback
+        element.checkForMatches();
+
+        // Verify the card flip sound was played for cards flipping back
+        expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
+    });
+
+    it('should play a sound when the game is reset', () => {
+        // Reset the mock to verify only the reset sound
+        mockPlayEffect.mockClear();
+
+        // Reset the game
+        element.restartGame();
+
+        // Verify the card flip sound was played for game reset
+        expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
     });
 }); 

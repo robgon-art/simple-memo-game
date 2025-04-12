@@ -76,6 +76,9 @@ export class GameBoard extends LitElement {
         )
       };
 
+      // Play card flip sound for cards flipping back
+      this.audioManager.playEffect('cardFlip');
+
       // Update game state with reset cards before processing the new selection
       this.gameState = fullyResetState;
 
@@ -116,6 +119,9 @@ export class GameBoard extends LitElement {
 
       // Set a new timer to flip cards back after the delay
       this.matchCheckTimer = this.timerService.setTimeout(() => {
+        // Play card flip sound for cards flipping back
+        this.audioManager.playEffect('cardFlip');
+
         this.gameState = clearSelectedCards(this.gameState);
         this.matchCheckTimer = null;
       }, this.revealDelay);
@@ -144,6 +150,9 @@ export class GameBoard extends LitElement {
       this.timerService.clearTimeout(this.matchCheckTimer);
       this.matchCheckTimer = null;
     }
+
+    // Play a sound for game reset
+    this.audioManager.playEffect('cardFlip');
 
     // Initialize a new game state
     this.gameState = this.initializeGameState();
