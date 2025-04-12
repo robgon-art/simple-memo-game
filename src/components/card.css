@@ -33,7 +33,7 @@
     justify-content: center;
     align-items: center;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
     overflow: hidden;
 }
 
@@ -60,12 +60,13 @@ img {
     cursor: pointer;
     margin: 10px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s ease;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+    transition: transform 0.3s ease, filter 0.3s ease;
 }
 
 .flip-card:hover {
     transform: translateY(-5px);
+    filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.15));
 }
 
 .flip-card-inner {
@@ -76,7 +77,6 @@ img {
     transition: transform 0.6s;
     transform-style: preserve-3d;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Counter-clockwise flip (default) */
@@ -119,9 +119,9 @@ img {
 
 /* Matched card styling */
 .flip-card.matched {
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+    filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.7));
 }
 
 .flip-card.matched .flip-card-inner {
-    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+    /* Removed box-shadow from here and will rely on parent filter */
 }
