@@ -12,6 +12,17 @@ export interface AudioEffect {
 // Configuration options
 export interface AudioManagerConfig {
     silent: boolean;
+    audioFactory?: (path: string) => AudioElement;
+}
+
+// Audio element interface for testing purposes
+export interface AudioElement {
+    preload: string;
+    volume: number;
+    currentTime: number;
+    play: () => Promise<void> | void;
+    pause: () => void;
+    cloneNode: () => AudioElement;
 }
 
 // Pure function to detect test environment
@@ -27,6 +38,12 @@ export const loadAudioEffects = (): AudioEffect[] => {
         { id: 'match', path: '/Match Sound.wav' },
         { id: 'gameComplete', path: '/Campaign Horse.mp3' }
     ];
+};
+
+// Default audio factory
+export const createAudio = (path: string): AudioElement => {
+    const audio = new Audio(path);
+    return audio as unknown as AudioElement;
 };
 
 // Side effect: logging function
@@ -50,12 +67,14 @@ export const logError = (error: unknown, silent: boolean): void => {
  */
 export class AudioManager {
     private audioEffects: AudioEffect[] = [];
-    private audioElements: Map<string, HTMLAudioElement> = new Map();
+    private audioElements: Map<string, AudioElement> = new Map();
     private silent: boolean;
-    private backgroundMusic: HTMLAudioElement | null = null;
+    private backgroundMusic: AudioElement | null = null;
+    private audioFactory: (path: string) => AudioElement;
 
     constructor(config?: Partial<AudioManagerConfig>) {
         this.silent = config?.silent ?? isTestEnvironment();
+        this.audioFactory = config?.audioFactory ?? createAudio;
         this.initialize();
     }
 
@@ -78,10 +97,15 @@ export class AudioManager {
     private preloadAudio(): void {
         if (typeof window === 'undefined') return; // Skip in non-browser environments
 
+        this.audioElements.clear();
         this.audioEffects.forEach(effect => {
-            const audio = new Audio(effect.path);
-            audio.preload = 'auto';
-            this.audioElements.set(effect.id, audio);
+            try {
+                const audio = this.audioFactory(effect.path);
+                audio.preload = 'auto';
+                this.audioElements.set(effect.id, audio);
+            } catch (error) {
+                logError(error, this.silent);
+            }
         });
     }
 
@@ -91,6 +115,9 @@ export class AudioManager {
     public reset(config?: Partial<AudioManagerConfig>): void {
         if (config?.silent !== undefined) {
             this.silent = config.silent;
+        }
+        if (config?.audioFactory !== undefined) {
+            this.audioFactory = config.audioFactory;
         }
         this.initialize();
     }
@@ -129,7 +156,7 @@ export class AudioManager {
             if (!audioElement) return false;
 
             // Clone the audio element to allow overlapping sounds
-            const clonedAudio = audioElement.cloneNode() as HTMLAudioElement;
+            const clonedAudio = audioElement.cloneNode() as AudioElement;
             clonedAudio.volume = Math.max(0, Math.min(1, volume));
             clonedAudio.play();
             return true;
@@ -155,7 +182,7 @@ export class AudioManager {
             if (!effect) return false;
 
             // Create a new audio element for the music
-            this.backgroundMusic = new Audio(effect.path);
+            this.backgroundMusic = this.audioFactory(effect.path);
             this.backgroundMusic.volume = Math.max(0, Math.min(1, volume));
             this.backgroundMusic.play();
             return true;

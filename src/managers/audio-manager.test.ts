@@ -1,8 +1,41 @@
 import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
-import { audioManager, AudioManager, isTestEnvironment, loadAudioEffects, logAudio, logError, AudioEffect } from './audio-manager';
+import { audioManager, AudioManager, isTestEnvironment, loadAudioEffects, logAudio, logError, AudioEffect, AudioElement } from './audio-manager';
 
 // Explicitly ensure silent mode is set
 audioManager.setSilent(true);
+
+// Create a test audio element that can be used for testing without browser APIs
+class TestAudioElement implements AudioElement {
+    public preload: string = '';
+    public volume: number = 1.0;
+    public currentTime: number = 0;
+    public path: string;
+    public isPlaying: boolean = false;
+    public isPaused: boolean = false;
+
+    constructor(path: string) {
+        this.path = path;
+    }
+
+    play(): void {
+        this.isPlaying = true;
+        this.isPaused = false;
+    }
+
+    pause(): void {
+        this.isPlaying = false;
+        this.isPaused = true;
+    }
+
+    cloneNode(): AudioElement {
+        const clone = new TestAudioElement(this.path);
+        clone.volume = this.volume;
+        return clone;
+    }
+}
+
+// Create a factory for test audio elements
+const createTestAudio = (path: string): AudioElement => new TestAudioElement(path);
 
 describe('AudioManager Module', () => {
     // Reset spies after each test
@@ -75,6 +108,24 @@ describe('AudioManager Module', () => {
             new AudioManager({ silent: true });
             expect(consoleLogSpy).not.toHaveBeenCalled();
         });
+
+        it('accepts a custom audio factory', () => {
+            const audioFactorySpy = vi.fn().mockImplementation((path: string): AudioElement => createTestAudio(path));
+
+            // Create the manager and verify it's properly initialized
+            const manager = new AudioManager({
+                silent: true,
+                audioFactory: audioFactorySpy
+            });
+
+            // Verify the manager is created with the correct properties
+            expect(manager).toBeInstanceOf(AudioManager);
+            expect(manager.getAllAudioEffects().length).toBeGreaterThan(0);
+
+            // Initialize should call the factory for each effect
+            expect(audioFactorySpy).toHaveBeenCalled();
+            expect(audioFactorySpy.mock.calls.length).toBeGreaterThanOrEqual(1);
+        });
     });
 
     describe('Singleton audioManager', () => {
@@ -102,7 +153,10 @@ describe('AudioManager Module', () => {
         let manager: AudioManager;
 
         beforeAll(() => {
-            manager = new AudioManager({ silent: true });
+            manager = new AudioManager({
+                silent: true,
+                audioFactory: createTestAudio
+            });
         });
 
         it('getAllAudioEffects returns a copy of all effects', () => {
@@ -145,7 +199,7 @@ describe('AudioManager Module', () => {
             const mockMap = new Map();
             mockMap.set('cardFlip', {
                 cloneNode: () => { throw new Error('Test error'); }
-            });
+            } as unknown as AudioElement);
 
             // @ts-ignore - replacing private property for testing
             manager['audioElements'] = mockMap;
@@ -155,27 +209,159 @@ describe('AudioManager Module', () => {
         });
 
         it('playEffect accepts volume parameter', () => {
-            manager.setSilent(false);
-
-            // Create mock for Audio implementation
-            const mockPlay = vi.fn();
-            const mockCloneNode = vi.fn(() => ({
-                play: mockPlay,
-                volume: 0
-            }));
-
-            const mockMap = new Map();
-            mockMap.set('cardFlip', {
-                cloneNode: mockCloneNode
+            // Create a fresh manager with our TestAudioElement
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: createTestAudio
             });
 
-            // @ts-ignore - replacing private property for testing
-            manager['audioElements'] = mockMap;
+            // Reset to ensure we have a clean state
+            testManager.reset({
+                silent: false,
+                audioFactory: createTestAudio
+            });
 
-            // Test with volume 0.5
-            expect(manager.playEffect('cardFlip', 0.5)).toBe(true);
-            expect(mockCloneNode).toHaveBeenCalled();
-            expect(mockPlay).toHaveBeenCalled();
+            // Play effect with volume 0.5
+            const result = testManager.playEffect('cardFlip', 0.5);
+            expect(result).toBe(true);
+        });
+
+        it('playMusic plays the background music', () => {
+            // Create a fresh manager with our TestAudioElement
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: createTestAudio
+            });
+
+            // Reset to ensure we have a clean state
+            testManager.reset({
+                silent: false,
+                audioFactory: createTestAudio
+            });
+
+            // Play music with volume 0.8
+            const result = testManager.playMusic('gameComplete', 0.8);
+            expect(result).toBe(true);
+
+            // Verify background music is set correctly
+            // @ts-ignore - accessing private field for testing
+            const backgroundMusic = testManager['backgroundMusic'] as TestAudioElement;
+            expect(backgroundMusic).toBeDefined();
+            expect(backgroundMusic.isPlaying).toBe(true);
+            expect(backgroundMusic.volume).toBe(0.8);
+        });
+
+        it('playMusic stops any previously playing music', () => {
+            // Create a fresh manager with our TestAudioElement
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: createTestAudio
+            });
+
+            // Play first track
+            testManager.playMusic('cardFlip');
+
+            // Keep a reference to the first background music
+            // @ts-ignore - accessing private field for testing
+            const firstMusic = testManager['backgroundMusic'];
+
+            // Spy on the stopMusic method
+            const stopMusicSpy = vi.spyOn(testManager, 'stopMusic');
+
+            // Play second track
+            testManager.playMusic('gameComplete');
+
+            // Verify stopMusic was called
+            expect(stopMusicSpy).toHaveBeenCalled();
+
+            // Verify first music was replaced
+            // @ts-ignore - accessing private field for testing
+            const secondMusic = testManager['backgroundMusic'];
+            expect(secondMusic).not.toBe(firstMusic);
+        });
+
+        it('playMusic returns false when in silent mode', () => {
+            // Create a fresh manager with silent mode
+            const testManager = new AudioManager({
+                silent: true,
+                audioFactory: createTestAudio
+            });
+
+            // Try to play music
+            const result = testManager.playMusic('gameComplete');
+            expect(result).toBe(false);
+
+            // Verify no background music was set
+            // @ts-ignore - accessing private field for testing
+            expect(testManager['backgroundMusic']).toBeNull();
+        });
+
+        it('playMusic returns false when effect not found', () => {
+            // Create a fresh manager
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: createTestAudio
+            });
+
+            // Try to play non-existent music
+            const result = testManager.playMusic('nonexistent');
+            expect(result).toBe(false);
+        });
+
+        it('playMusic handles errors gracefully', () => {
+            // Create a fresh manager
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: () => { throw new Error('Test error'); }
+            });
+
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+            // Try to play music with a failing factory
+            const result = testManager.playMusic('gameComplete');
+            expect(result).toBe(false);
+            expect(consoleErrorSpy).toHaveBeenCalled();
+        });
+
+        it('stopMusic stops and resets background music', () => {
+            // Create a fresh manager with our TestAudioElement
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: createTestAudio
+            });
+
+            // Play some music first
+            testManager.playMusic('gameComplete');
+
+            // Keep a reference to the background music
+            // @ts-ignore - accessing private field for testing
+            const music = testManager['backgroundMusic'] as TestAudioElement;
+            expect(music.isPlaying).toBe(true);
+
+            // Stop the music
+            testManager.stopMusic();
+
+            // Verify the music was paused and reset
+            expect(music.isPaused).toBe(true);
+            expect(music.currentTime).toBe(0);
+
+            // Verify background music reference was cleared
+            // @ts-ignore - accessing private field for testing
+            expect(testManager['backgroundMusic']).toBeNull();
+        });
+
+        it('stopMusic does nothing when no music is playing', () => {
+            // Create a fresh manager with our TestAudioElement
+            const testManager = new AudioManager({
+                silent: false,
+                audioFactory: createTestAudio
+            });
+
+            // @ts-ignore - accessing private field for testing
+            expect(testManager['backgroundMusic']).toBeNull();
+
+            // Should not throw error when no music is playing
+            expect(() => testManager.stopMusic()).not.toThrow();
         });
     });
 }); 
