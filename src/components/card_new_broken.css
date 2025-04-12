@@ -60,12 +60,29 @@ img {
     cursor: pointer;
     margin: 10px;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
     transition: transform 0.3s ease;
 }
 
 .flip-card:hover {
     transform: translateY(-5px);
+}
+
+/* 3D Shadow element */
+.flip-card::after {
+    content: '';
+    position: absolute;
+    width: 95%;
+    height: 95%;
+    left: 2.5%;
+    top: 2.5%;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    transform: translateZ(-10px);
+    filter: blur(10px);
+    z-index: -1;
+    transition: transform 0.6s, opacity 0.3s;
+    transform-style: preserve-3d;
 }
 
 .flip-card-inner {
@@ -76,7 +93,6 @@ img {
     transition: transform 0.6s;
     transform-style: preserve-3d;
     border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Counter-clockwise flip (default) */
@@ -87,6 +103,16 @@ img {
 /* Clockwise flip */
 .flip-card.revealed[data-flip-direction="reverse"] .flip-card-inner {
     transform: rotateY(-180deg);
+}
+
+/* Shadow rotation for normal flip */
+.flip-card.revealed[data-flip-direction="normal"]::after {
+    transform: rotateY(180deg) translateZ(-10px);
+}
+
+/* Shadow rotation for reverse flip */
+.flip-card.revealed[data-flip-direction="reverse"]::after {
+    transform: rotateY(-180deg) translateZ(-10px);
 }
 
 .flip-card-front,
@@ -119,24 +145,41 @@ img {
 
 /* Matched card styling */
 .flip-card.matched {
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+    filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.7));
 }
 
 .flip-card.matched .flip-card-inner {
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
     animation: pulse 2s infinite;
+}
+
+.flip-card.matched::after {
+    background: rgba(76, 175, 80, 0.3);
+    animation: shadow-pulse 2s infinite;
+}
+
+@keyframes shadow-pulse {
+    0% {
+        opacity: 0.3;
+        filter: blur(10px);
+    }
+    50% {
+        opacity: 0.5;
+        filter: blur(15px);
+    }
+    100% {
+        opacity: 0.3;
+        filter: blur(10px);
+    }
 }
 
 @keyframes pulse {
     0% {
-        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        filter: brightness(1);
     }
-
     50% {
-        box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+        filter: brightness(1.1);
     }
-
     100% {
-        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        filter: brightness(1);
     }
 }
