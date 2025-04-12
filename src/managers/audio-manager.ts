@@ -24,7 +24,8 @@ export const loadAudioEffects = (): AudioEffect[] => {
     // In Vite, assets in the public directory are referenced directly by URL
     return [
         { id: 'cardFlip', path: '/Card Flip.wav' },
-        { id: 'match', path: '/Match Sound.wav' }
+        { id: 'match', path: '/Match Sound.wav' },
+        { id: 'gameComplete', path: '/Campaign Horse.mp3' }
     ];
 };
 
@@ -51,6 +52,7 @@ export class AudioManager {
     private audioEffects: AudioEffect[] = [];
     private audioElements: Map<string, HTMLAudioElement> = new Map();
     private silent: boolean;
+    private backgroundMusic: HTMLAudioElement | null = null;
 
     constructor(config?: Partial<AudioManagerConfig>) {
         this.silent = config?.silent ?? isTestEnvironment();
@@ -134,6 +136,43 @@ export class AudioManager {
         } catch (error) {
             logError(error, this.silent);
             return false;
+        }
+    }
+
+    /**
+     * Play background music by ID
+     * @returns true if played successfully, false otherwise
+     */
+    public playMusic(id: string, volume: number = 0.7): boolean {
+        if (this.silent) return false;
+        if (typeof window === 'undefined') return false;
+
+        try {
+            // Stop any currently playing music
+            this.stopMusic();
+
+            const effect = this.getAudioEffectById(id);
+            if (!effect) return false;
+
+            // Create a new audio element for the music
+            this.backgroundMusic = new Audio(effect.path);
+            this.backgroundMusic.volume = Math.max(0, Math.min(1, volume));
+            this.backgroundMusic.play();
+            return true;
+        } catch (error) {
+            logError(error, this.silent);
+            return false;
+        }
+    }
+
+    /**
+     * Stop any currently playing background music
+     */
+    public stopMusic(): void {
+        if (this.backgroundMusic) {
+            this.backgroundMusic.pause();
+            this.backgroundMusic.currentTime = 0;
+            this.backgroundMusic = null;
         }
     }
 }

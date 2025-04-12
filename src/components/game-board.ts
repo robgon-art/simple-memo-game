@@ -139,6 +139,9 @@ export class GameBoard extends LitElement {
   handleGameCompletion() {
     // Call the completion callback
     this.onGameCompleted(this.gameState.moves);
+    
+    // Play the completion music
+    this.audioManager.playMusic('gameComplete');
   }
 
   /**
@@ -150,6 +153,9 @@ export class GameBoard extends LitElement {
       this.timerService.clearTimeout(this.matchCheckTimer);
       this.matchCheckTimer = null;
     }
+
+    // Stop any playing music
+    this.audioManager.stopMusic();
 
     // Play a sound for game reset
     this.audioManager.playEffect('cardFlip');
