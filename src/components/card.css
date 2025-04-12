@@ -100,12 +100,12 @@ img {
     overflow: hidden;
 }
 
-.flip-card-front {
+.flip-card-back {
     background-color: #2980b9;
     transform: rotateY(0deg);
 }
 
-.flip-card-back {
+.flip-card-front {
     transform: rotateY(180deg);
     background-color: #f8f8f8;
 }

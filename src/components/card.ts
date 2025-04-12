@@ -38,12 +38,12 @@ export class FlipCard extends LitElement {
   render() {
     return html`
       <div class="flip-card ${this.revealed ? 'revealed' : ''} ${this.matched ? 'matched' : ''}" 
-           data-flip-direction="${this.flipDirection}">
+          data-flip-direction="${this.flipDirection}">
         <div class="flip-card-inner">
-          <div class="flip-card-front" @click="${this.handleClick}">
+          <div class="flip-card-back" @click="${this.handleClick}">
             <img src="${this.backImage}" alt="${this.backAlt}">
           </div>
-          <div class="flip-card-back">
+          <div class="flip-card-front">
             <img src="${this.frontImage}" alt="${this.frontAlt}">
           </div>
         </div>
