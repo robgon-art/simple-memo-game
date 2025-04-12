@@ -44,7 +44,49 @@ export class GameBoard extends LitElement {
    * Initialize a new game state with shuffled cards
    */
   initializeGameState(): GameState {
-    return initializeGame(12, shuffleCards);
+    // Check if there's a progress parameter in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const progressParam = urlParams.get('progress');
+    
+    // Create initial game state
+    const initialState = initializeGame(12, shuffleCards);
+    
+    // If progress parameter exists and is valid, pre-match cards
+    if (progressParam) {
+      const progress = parseInt(progressParam, 10);
+      
+      // Validate progress is between 0 and total pairs
+      if (!isNaN(progress) && progress >= 0 && progress <= 12) {
+        // Get the unique imageIds from the shuffled cards
+        const uniqueImageIds = Array.from(
+          new Set(initialState.cards.map(card => card.imageId))
+        );
+        
+        // Select the specified number of imageIds to match
+        const imageIdsToMatch = uniqueImageIds.slice(0, progress);
+        
+        // Update cards to match the pairs with the selected imageIds
+        const updatedCards = initialState.cards.map(card => {
+          if (imageIdsToMatch.includes(card.imageId)) {
+            return { ...card, isMatched: true, isRevealed: true };
+          }
+          return card;
+        });
+        
+        // Return updated state with pre-matched cards and adjusted move count
+        return {
+          ...initialState,
+          cards: updatedCards,
+          // Set moves to the number of matches (one move per match)
+          moves: progress,
+          // Game is completed if all pairs are matched
+          status: progress === 12 ? GameStatus.COMPLETED : GameStatus.IN_PROGRESS
+        };
+      }
+    }
+    
+    // Return regular initial state if no valid progress parameter
+    return initialState;
   }
 
   /**
@@ -139,7 +181,7 @@ export class GameBoard extends LitElement {
   handleGameCompletion() {
     // Call the completion callback
     this.onGameCompleted(this.gameState.moves);
-    
+
     // Play the completion music
     this.audioManager.playMusic('gameComplete');
   }

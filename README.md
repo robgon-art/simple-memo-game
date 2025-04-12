@@ -38,10 +38,15 @@ The codebase is structured into three main components:
 - `grid.ts`: Manages the responsive 6x4 layout
 - `game-board.ts`: Coordinates the game state and card interactions
 
+## Testing Features
+
+For testing and development purposes, the game supports URL parameters to control game state:
+
+- `progress`: Automatically reveals and matches the specified number of card pairs
+  - Example: `http://localhost:5173/?progress=11` will pre-match 11 out of 12 card pairs
+  - Valid values are between 0 and 12
+  - This allows easy testing of near-game-completion scenarios
+
 ## Next Steps
 
 Future enhancements will include:
-- Shuffling algorithm
-- Match checking
-- Turn counting
-- Game completion detection
