@@ -121,7 +121,3 @@ img {
 .flip-card.matched {
     filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.7));
 }
-
-.flip-card.matched .flip-card-inner {
-    /* Removed box-shadow from here and will rely on parent filter */
-}
