@@ -101,13 +101,13 @@ img {
 }
 
 .flip-card-front {
-    transform: rotateY(180deg);
-    background-color: #f8f8f8;
+    background-color: #2980b9;
+    transform: rotateY(0deg);
 }
 
 .flip-card-back {
-    background-color: #2980b9;
-    transform: rotateY(0deg);
+    transform: rotateY(180deg);
+    background-color: #f8f8f8;
 }
 
 .flip-card-front img,
@@ -123,20 +123,5 @@ img {
 }
 
 .flip-card.matched .flip-card-inner {
-    box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-    }
-
-    50% {
-        box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
-    }
-
-    100% {
-        box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
-    }
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
 }
