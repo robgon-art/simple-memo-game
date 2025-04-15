@@ -7,7 +7,7 @@
 4. Implement grid layout (6x4) component show all 24 flippable cards (2 each)
 
 ## Phase 2: Game Logic
-1. Create a game state model
+1. Create a game state model 
    - Cards array with ID, image, matched status, and revealed status
    - Game status (in progress, completed)
 2. Create pure functions for:
