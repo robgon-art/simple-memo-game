@@ -182,8 +182,7 @@ export class GameBoard extends LitElement {
     // Call the completion callback
     this.onGameCompleted(this.gameState.moves);
 
-    // Play the completion music
-    this.audioManager.playMusic('gameComplete');
+    // The completion music is now handled in match-checking.ts after the aero chime
   }
 
   /**

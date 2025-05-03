@@ -5,6 +5,10 @@
  */
 
 import { GameState, GameStatus } from '../models/game-state';
+import { audioManager } from '../managers/audio-manager';
+
+// Create audio object for match sound
+const matchSound = new Audio('/aero-chime-one-shot.mp3');
 
 /**
  * Checks if the two selected cards match based on their imageId
@@ -59,6 +63,28 @@ export const processMatches = (state: GameState): GameState => {
 
     // Check if the selected cards match
     const isMatch = doSelectedCardsMatch(state);
+
+    // Play match sound if cards match
+    if (isMatch) {
+        // Check if this is the final match
+        const willBeCompleted = state.cards.filter(card => 
+            card.isMatched || state.selectedCardIds.includes(card.id)
+        ).length === state.cards.length;
+
+        if (willBeCompleted) {
+            // For final match, play victory sound after match sound
+            matchSound.onended = () => {
+                audioManager.playMusic('gameComplete');
+            };
+        } else {
+            // For regular matches, clear any previous onended handler
+            matchSound.onended = null;
+        }
+
+        matchSound.play().catch(error => {
+            console.error('Error playing match sound:', error);
+        });
+    }
 
     // Update cards based on the match result
     const updatedCards = state.cards.map(card => {
