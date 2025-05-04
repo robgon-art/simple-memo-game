@@ -12,6 +12,29 @@ export class FlipCard extends LitElement {
   @property({ type: Boolean, reflect: true }) matched = false;
   @property({ type: String }) flipDirection = 'normal'; // 'normal' = counter-clockwise, 'reverse' = clockwise
 
+  private animationTimeout: number | null = null;
+
+  updated(changedProperties: Map<string, any>) {
+    if (changedProperties.has('matched') && this.matched) {
+      // Add animation class when card is matched
+      const card = this.shadowRoot?.querySelector('.flip-card');
+      card?.classList.add('animate-match');
+
+      // Remove animation class after animation completes
+      this.animationTimeout = window.setTimeout(() => {
+        card?.classList.remove('animate-match');
+      }, 500); // Match the animation duration in CSS
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    // Clean up timeout if component is removed
+    if (this.animationTimeout) {
+      clearTimeout(this.animationTimeout);
+    }
+  }
+
   handleClick(event: MouseEvent) {
     // Prevent flipping already matched cards or currently revealed cards
     if (this.matched || this.revealed) {

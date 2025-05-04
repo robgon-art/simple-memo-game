@@ -57,6 +57,9 @@ Each phase will follow functional programming principles including:
 /
 ├── public/
 │   ├── Back Side.jpg            # Card back image
+│   ├── Card Flip.wav            # Card flip sound effect
+│   ├── Match Sound.wav          # Card match sound effect
+│   ├── Campaign Horse.mp3       # Game completion music
 │   └── cards/                   # Card front images directory
 │       ├── image1.jpg
 │       ├── image2.jpg
@@ -85,7 +88,9 @@ Each phase will follow functional programming principles including:
 │   │
 │   ├── managers/
 │   │   ├── image-manager.ts      # Image loading and management
-│   │   └── image-manager.test.ts # Image service tests
+│   │   ├── image-manager.test.ts # Image service tests
+│   │   ├── audio-manager.ts      # Audio loading and playback
+│   │   └── audio-manager.test.ts # Audio manager tests
 │   │
 │   ├── utils/
 │   │   ├── timer.ts             # Timer utility
