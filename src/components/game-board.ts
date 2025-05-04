@@ -47,24 +47,34 @@ export class GameBoard extends LitElement {
     // Check if there's a progress parameter in the URL
     const urlParams = new URLSearchParams(window.location.search);
     const progressParam = urlParams.get('progress');
-    
+    const numPairsParam = urlParams.get('num_pairs');
+
+    // Validate and set number of pairs
+    let numPairs = 12;
+    if (numPairsParam) {
+      const parsedPairs = parseInt(numPairsParam, 10);
+      if (!isNaN(parsedPairs) && parsedPairs >= 2 && parsedPairs <= 12) {
+        numPairs = parsedPairs;
+      }
+    }
+
     // Create initial game state
-    const initialState = initializeGame(12, shuffleCards);
-    
+    const initialState = initializeGame(numPairs, shuffleCards);
+
     // If progress parameter exists and is valid, pre-match cards
     if (progressParam) {
       const progress = parseInt(progressParam, 10);
-      
+
       // Validate progress is between 0 and total pairs
-      if (!isNaN(progress) && progress >= 0 && progress <= 12) {
+      if (!isNaN(progress) && progress >= 0 && progress <= numPairs) {
         // Get the unique imageIds from the shuffled cards
         const uniqueImageIds = Array.from(
           new Set(initialState.cards.map(card => card.imageId))
         );
-        
+
         // Select the specified number of imageIds to match
         const imageIdsToMatch = uniqueImageIds.slice(0, progress);
-        
+
         // Update cards to match the pairs with the selected imageIds
         const updatedCards = initialState.cards.map(card => {
           if (imageIdsToMatch.includes(card.imageId)) {
@@ -72,7 +82,7 @@ export class GameBoard extends LitElement {
           }
           return card;
         });
-        
+
         // Return updated state with pre-matched cards and adjusted move count
         return {
           ...initialState,
@@ -80,11 +90,11 @@ export class GameBoard extends LitElement {
           // Set moves to the number of matches (one move per match)
           moves: progress,
           // Game is completed if all pairs are matched
-          status: progress === 12 ? GameStatus.COMPLETED : GameStatus.IN_PROGRESS
+          status: progress === numPairs ? GameStatus.COMPLETED : GameStatus.IN_PROGRESS
         };
       }
     }
-    
+
     // Return regular initial state if no valid progress parameter
     return initialState;
   }
@@ -231,7 +241,7 @@ export class GameBoard extends LitElement {
         ? html`<p class="game-complete">Game Complete!</p>`
         : ''}
         </div>
-        <memory-grid>
+        <memory-grid .numPairs=${this.gameState.cards.length / 2}>
           ${this.gameState.cards.map(card => html`
             <flip-card
               .frontImage=${this.getCardImagePath(card.imageId)}
