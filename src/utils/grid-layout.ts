@@ -12,7 +12,7 @@ export interface GridLayout {
 export function calculateGridLayout(numPairs: number): GridLayout {
     // Define possible layouts for different numbers of pairs
     const layouts: { [key: number]: GridLayout } = {
-        2: { columns: 5, rows: 1, totalCells: 5 },
+        2: { columns: 4, rows: 1, totalCells: 4 },
         3: { columns: 5, rows: 2, totalCells: 10 },
         4: { columns: 5, rows: 2, totalCells: 10 },
         5: { columns: 5, rows: 2, totalCells: 10 },
