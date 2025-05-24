@@ -12,7 +12,9 @@ export default defineConfig({
                 'node_modules/',
                 '**/*.test.ts',
                 'vitest.config.ts',
-                'src/vite-env.d.ts'
+                'src/vite-env.d.ts',
+                'vite.config.ts',
+                'dist/assets/index-*.js'
             ]
         },
     },
