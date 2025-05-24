@@ -30,7 +30,8 @@ export class GameBoard extends LitElement {
     console.log(`Game completed in ${moves} moves!`);
   };
 
-  private backImage = '/Back Side.jpg';
+  // private backImage = '/Back Side.jpg';
+  private backImage = import.meta.env.BASE_URL + 'Back Side.jpg';
   private backAlt = 'Card Back';
   private matchCheckTimer: number | null = null;
   private revealDelay = 2000; // Time in ms to keep unmatched cards revealed
