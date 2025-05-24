@@ -23,6 +23,7 @@ export interface AudioElement {
     play: () => Promise<void> | void;
     pause: () => void;
     cloneNode: () => AudioElement;
+    addEventListener: (type: string, listener: EventListenerOrEventListenerObject) => void;
 }
 
 // Pure function to detect test environment
@@ -71,6 +72,7 @@ export class AudioManager {
     private silent: boolean;
     private backgroundMusic: AudioElement | null = null;
     private audioFactory: (path: string) => AudioElement;
+    private eventListeners: Map<string, Set<() => void>> = new Map();
 
     constructor(config?: Partial<AudioManagerConfig>) {
         this.silent = config?.silent ?? isTestEnvironment();
@@ -167,6 +169,30 @@ export class AudioManager {
     }
 
     /**
+     * Add an event listener for music events
+     */
+    public addEventListener(event: 'musicStart' | 'musicEnd', callback: () => void): void {
+        if (!this.eventListeners.has(event)) {
+            this.eventListeners.set(event, new Set());
+        }
+        this.eventListeners.get(event)?.add(callback);
+    }
+
+    /**
+     * Remove an event listener
+     */
+    public removeEventListener(event: 'musicStart' | 'musicEnd', callback: () => void): void {
+        this.eventListeners.get(event)?.delete(callback);
+    }
+
+    /**
+     * Trigger an event
+     */
+    private triggerEvent(event: 'musicStart' | 'musicEnd'): void {
+        this.eventListeners.get(event)?.forEach(callback => callback());
+    }
+
+    /**
      * Play background music by ID
      * @returns true if played successfully, false otherwise
      */
@@ -184,6 +210,11 @@ export class AudioManager {
             // Create a new audio element for the music
             this.backgroundMusic = this.audioFactory(effect.path);
             this.backgroundMusic.volume = Math.max(0, Math.min(1, volume));
+
+            // Add event listeners for music start and end
+            this.backgroundMusic.addEventListener('play', () => this.triggerEvent('musicStart'));
+            this.backgroundMusic.addEventListener('ended', () => this.triggerEvent('musicEnd'));
+
             this.backgroundMusic.play();
             return true;
         } catch (error) {
@@ -200,6 +231,7 @@ export class AudioManager {
             this.backgroundMusic.pause();
             this.backgroundMusic.currentTime = 0;
             this.backgroundMusic = null;
+            this.triggerEvent('musicEnd');
         }
     }
 }

@@ -11,6 +11,9 @@ export class FlipCard extends LitElement {
   @property({ type: Boolean, reflect: true }) revealed = false;
   @property({ type: Boolean, reflect: true }) matched = false;
   @property({ type: String }) flipDirection = 'normal'; // 'normal' = counter-clockwise, 'reverse' = clockwise
+  @property({ type: Boolean }) isHorizontal = false; // For celebration animation direction
+  @property({ type: Boolean }) isGameCompleted = false; // For tracking game completion
+  @property({ type: Number }) phaseOffset = 0; // For animation phase offset
 
   private animationTimeout: number | null = null;
 
@@ -59,9 +62,17 @@ export class FlipCard extends LitElement {
   }
 
   render() {
+    const celebrationClass = this.isGameCompleted && this.matched ?
+      (this.isHorizontal ? 'celebrate-horizontal' : 'celebrate-vertical') : '';
+
+    // Create a style string for the animation delay
+    const animationDelay = this.isGameCompleted && this.matched ? 
+      `animation-delay: -${this.phaseOffset}s;` : '';
+
     return html`
-      <div class="flip-card ${this.revealed ? 'revealed' : ''} ${this.matched ? 'matched' : ''}" 
-          data-flip-direction="${this.flipDirection}">
+      <div class="flip-card ${this.revealed ? 'revealed' : ''} ${this.matched ? 'matched' : ''} ${celebrationClass}" 
+          data-flip-direction="${this.flipDirection}"
+          style="${animationDelay}">
         <div class="flip-card-inner">
           <div class="flip-card-back" @click="${this.handleClick}">
             <img src="${this.backImage}" alt="${this.backAlt}">

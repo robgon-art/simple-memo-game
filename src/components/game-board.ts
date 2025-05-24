@@ -18,6 +18,7 @@ export type GameCompletionCallback = (moves: number) => void;
 @customElement('memory-game-board')
 export class GameBoard extends LitElement {
   @state() gameState: GameState;
+  @state() private isVictoryMusicPlaying = false;
 
   @property({ type: Object })
   timerService: TimerService = defaultTimerService;
@@ -39,6 +40,15 @@ export class GameBoard extends LitElement {
   constructor() {
     super();
     this.gameState = this.initializeGameState();
+
+    // Listen for music start/end events
+    this.audioManager.addEventListener('musicStart', () => {
+      this.isVictoryMusicPlaying = true;
+    });
+
+    this.audioManager.addEventListener('musicEnd', () => {
+      this.isVictoryMusicPlaying = false;
+    });
   }
 
   /**
@@ -233,6 +243,19 @@ export class GameBoard extends LitElement {
   }
 
   render() {
+    // Create a map of imageId to animation properties for pairs
+    const pairAnimationProps = new Map<number, { isHorizontal: boolean, phaseOffset: number }>();
+    this.gameState.cards.forEach((card, index) => {
+      if (!pairAnimationProps.has(card.imageId)) {
+        // Assign horizontal (true) or vertical (false) based on the first occurrence of each pair
+        // Generate a random phase offset between 0 and 0.48 (one beat)
+        pairAnimationProps.set(card.imageId, {
+          isHorizontal: index % 2 === 0,
+          phaseOffset: Math.random() * 0.48
+        });
+      }
+    });
+
     return html`
       <div class="memory-game">
         <h1>Memory Matching Game</h1>
@@ -243,7 +266,9 @@ export class GameBoard extends LitElement {
         : ''}
         </div>
         <memory-grid .numPairs=${this.gameState.cards.length / 2}>
-          ${this.gameState.cards.map(card => html`
+          ${this.gameState.cards.map((card) => {
+            const props = pairAnimationProps.get(card.imageId);
+            return html`
             <flip-card
               .frontImage=${this.getCardImagePath(card.imageId)}
               .backImage=${this.backImage}
@@ -251,9 +276,12 @@ export class GameBoard extends LitElement {
               .backAlt=${this.backAlt}
               ?revealed=${card.isRevealed}
               ?matched=${card.isMatched}
+              ?isGameCompleted=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying}
+              .isHorizontal=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying && props?.isHorizontal}
+              .phaseOffset=${props?.phaseOffset ?? 0}
               @card-flipped=${(e: CustomEvent) => this.handleCardFlip(e, card.id)}
             ></flip-card>
-          `)}
+          `})}
         </memory-grid>
         <button @click=${this.restartGame} class="restart-button">Restart Game</button>
       </div>

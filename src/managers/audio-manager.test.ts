@@ -12,6 +12,7 @@ class TestAudioElement implements AudioElement {
     public path: string;
     public isPlaying: boolean = false;
     public isPaused: boolean = false;
+    private eventListeners: Map<string, Set<EventListenerOrEventListenerObject>> = new Map();
 
     constructor(path: string) {
         this.path = path;
@@ -20,17 +21,38 @@ class TestAudioElement implements AudioElement {
     play(): void {
         this.isPlaying = true;
         this.isPaused = false;
+        this.triggerEvent('play');
     }
 
     pause(): void {
         this.isPlaying = false;
         this.isPaused = true;
+        this.triggerEvent('pause');
     }
 
     cloneNode(): AudioElement {
         const clone = new TestAudioElement(this.path);
         clone.volume = this.volume;
         return clone;
+    }
+
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+        if (!this.eventListeners.has(type)) {
+            this.eventListeners.set(type, new Set());
+        }
+        this.eventListeners.get(type)?.add(listener);
+    }
+
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {
+        this.eventListeners.get(type)?.delete(listener);
+    }
+
+    private triggerEvent(type: string): void {
+        this.eventListeners.get(type)?.forEach(listener => {
+            if (typeof listener === 'function') {
+                listener(new Event(type));
+            }
+        });
     }
 }
 

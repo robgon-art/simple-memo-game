@@ -132,12 +132,59 @@ img {
         filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.7));
         transform: scale(1);
     }
+
     50% {
         filter: drop-shadow(0 0 45px rgba(76, 175, 80, 1)) brightness(1.2);
         transform: scale(1.1);
     }
+
     100% {
         filter: drop-shadow(0 0 15px rgba(76, 175, 80, 0.7));
         transform: scale(1);
+    }
+}
+
+/* Beat-synchronized celebration animations */
+.flip-card.celebrate-horizontal {
+    animation: celebrate-horizontal 0.48s infinite;
+}
+
+.flip-card.celebrate-vertical {
+    animation: celebrate-vertical 0.48s infinite;
+}
+
+@keyframes celebrate-horizontal {
+    0% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-4px);
+    }
+
+    75% {
+        transform: translateX(4px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes celebrate-vertical {
+    0% {
+        transform: translateY(0);
+    }
+
+    25% {
+        transform: translateY(-4px);
+    }
+
+    75% {
+        transform: translateY(4px);
+    }
+
+    100% {
+        transform: translateY(0);
     }
 }
