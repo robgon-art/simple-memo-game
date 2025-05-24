@@ -8,7 +8,7 @@ import { GameState, GameStatus } from '../models/game-state';
 import { audioManager } from '../managers/audio-manager';
 
 // Create audio object for match sound
-const matchSound = new Audio('/aero-chime-one-shot.mp3');
+const matchSound = new Audio(import.meta.env.BASE_URL + 'aero-chime-one-shot.mp3');
 
 /**
  * Checks if the two selected cards match based on their imageId

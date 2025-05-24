@@ -43,18 +43,18 @@ export const createCardImage = (path: string, index: number): CardImage => ({
 export const loadCardImages = (): CardImage[] => {
     // In Vite, assets in the public directory are referenced directly by URL
     const cardPaths = [
-        '/cards/A Sunday Afternoon on the Island of La Grande Jatte, Georges Seurat, 1884.jpg',
-        '/cards/Mont Sainte-Victoire, Paul Cézanne, c. 1890s.jpg',
-        '/cards/Jeanne Samary in a Low-Necked Dress, Pierre-Auguste Renoir, 1877.jpg',
-        '/cards/Children Playing on the Beach, Mary Cassatt, 1884.jpg',
-        '/cards/The Green Line, Henri Matisse, 1905.jpg',
-        '/cards/The Starry Night, Vincent van Gogh, 1889.jpg',
-        '/cards/Le Déjeuner sur l\'herbe, Édouard Manet, 1863.jpg',
-        '/cards/Dance at Bougival, Pierre-Auguste Renoir, 1883.jpg',
-        '/cards/The Ballet Class, Edgar Degas, 1873.jpg',
-        '/cards/Boulevard Montmartre, Spring, Camille Pissarro, 1897.jpg',
-        '/cards/At the Moulin Rouge - The Dance, Henri de Toulouse-Lautrec, 1890.jpg',
-        '/cards/Impression Sunrise, Claude Monet, 1872.jpg'
+        import.meta.env.BASE_URL + 'cards/A Sunday Afternoon on the Island of La Grande Jatte, Georges Seurat, 1884.jpg',
+        import.meta.env.BASE_URL + 'cards/Mont Sainte-Victoire, Paul Cézanne, c. 1890s.jpg',
+        import.meta.env.BASE_URL + 'cards/Jeanne Samary in a Low-Necked Dress, Pierre-Auguste Renoir, 1877.jpg',
+        import.meta.env.BASE_URL + 'cards/Children Playing on the Beach, Mary Cassatt, 1884.jpg',
+        import.meta.env.BASE_URL + 'cards/The Green Line, Henri Matisse, 1905.jpg',
+        import.meta.env.BASE_URL + 'cards/The Starry Night, Vincent van Gogh, 1889.jpg',
+        import.meta.env.BASE_URL + 'cards/Le Déjeuner sur l\'herbe, Édouard Manet, 1863.jpg',
+        import.meta.env.BASE_URL + 'cards/Dance at Bougival, Pierre-Auguste Renoir, 1883.jpg',
+        import.meta.env.BASE_URL + 'cards/The Ballet Class, Edgar Degas, 1873.jpg',
+        import.meta.env.BASE_URL + 'cards/Boulevard Montmartre, Spring, Camille Pissarro, 1897.jpg',
+        import.meta.env.BASE_URL + 'cards/At the Moulin Rouge - The Dance, Henri de Toulouse-Lautrec, 1890.jpg',
+        import.meta.env.BASE_URL + 'cards/Impression Sunrise, Claude Monet, 1872.jpg'
     ];
 
     // Convert the paths to CardImage objects using pure function
@@ -82,7 +82,7 @@ export const logError = (error: unknown, silent: boolean): void => {
  */
 export class ImageManager {
     private cardImages: CardImage[] = [];
-    private backImagePath: string = '/Back Side.jpg';
+    private backImagePath: string = import.meta.env.BASE_URL + 'Back Side.jpg';
     private silent: boolean;
 
     constructor(config?: Partial<ImageManagerConfig>) {

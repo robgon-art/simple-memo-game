@@ -34,9 +34,9 @@ export const isTestEnvironment = (): boolean =>
 export const loadAudioEffects = (): AudioEffect[] => {
     // In Vite, assets in the public directory are referenced directly by URL
     return [
-        { id: 'cardFlip', path: '/Card Flip.wav' },
-        { id: 'match', path: '/Match Sound.wav' },
-        { id: 'gameComplete', path: '/Campaign Horse.mp3' }
+        { id: 'cardFlip', path: import.meta.env.BASE_URL + 'Card Flip.wav' },
+        { id: 'match', path: import.meta.env.BASE_URL + 'Match Sound.wav' },
+        { id: 'gameComplete', path: import.meta.env.BASE_URL + 'Campaign Horse.mp3' }
     ];
 };
 
