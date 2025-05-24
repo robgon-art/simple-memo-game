@@ -47,6 +47,11 @@ For testing and development purposes, the game supports URL parameters to contro
   - Valid values are between 0 and 12
   - This allows easy testing of near-game-completion scenarios
 
+- `num_pairs`: Sets the number of card pairs in the game
+  - Example: `http://localhost:5173/?num_pairs=8` will start a game with 8 pairs (16 cards)
+  - Valid values are between 2 and 12
+  - This allows you to test the game with fewer or more pairs for different difficulty levels
+
 ## Next Steps
 
 Future enhancements will include:
