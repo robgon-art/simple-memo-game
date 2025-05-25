@@ -9,7 +9,9 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'html', 'json', 'lcov'],
             exclude: [
-                'node_modules/',
+                'build.js',
+                'node_modules/**',
+                'dist/**',
                 '**/*.test.ts',
                 'vitest.config.ts',
                 'src/vite-env.d.ts',

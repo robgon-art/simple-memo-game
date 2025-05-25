@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node build.js",
     "preview": "vite preview",
     "test": "cross-env NODE_OPTIONS=--no-warnings vitest run",
     "test:watch": "cross-env NODE_OPTIONS=--no-warnings vitest",
@@ -20,8 +20,10 @@
   "devDependencies": {
     "@open-wc/testing": "^4.0.0",
     "@testing-library/dom": "^9.3.4",
+    "@types/fs-extra": "^11.0.4",
     "@vitest/coverage-v8": "^3.1.1",
     "cross-env": "^7.0.3",
+    "fs-extra": "^11.3.0",
     "gh-pages": "^6.3.0",
     "happy-dom": "^13.6.2",
     "jsdom": "^24.0.0",
