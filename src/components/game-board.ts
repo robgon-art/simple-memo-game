@@ -22,6 +22,7 @@ export class GameBoard extends LitElement {
   @state() private cardStyleValue = 0; // State for card style slider value
   @state() private gridSizeValue = 0; // State for grid size slider value
   @state() private isPreviewMode = false; // State to track if we're showing card preview
+  @state() private isRestarting = false; // State to track if we're in the process of restarting
 
   @property({ type: Object })
   timerService: TimerService = defaultTimerService;
@@ -241,6 +242,9 @@ export class GameBoard extends LitElement {
    * Restart the game
    */
   restartGame() {
+    // If already restarting, ignore the click
+    if (this.isRestarting) return;
+
     // Cancel any pending timers
     if (this.matchCheckTimer !== null) {
       this.timerService.clearTimeout(this.matchCheckTimer);
@@ -256,8 +260,25 @@ export class GameBoard extends LitElement {
     // Reset preview mode
     this.isPreviewMode = false;
 
-    // Initialize a new game state
-    this.gameState = this.initializeGameState();
+    // Set restarting state to true
+    this.isRestarting = true;
+
+    // First flip all cards face down
+    this.gameState = {
+      ...this.gameState,
+      cards: this.gameState.cards.map(card => ({
+        ...card,
+        isRevealed: false,
+        isMatched: false
+      }))
+    };
+
+    // Wait for flip animation to complete (500ms) before shuffling
+    this.timerService.setTimeout(() => {
+      // Initialize a new game state
+      this.gameState = this.initializeGameState();
+      this.isRestarting = false;
+    }, 500);
   }
 
   /**
