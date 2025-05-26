@@ -24,9 +24,10 @@ export class MainElement extends LitElement {
 
     render() {
         return html`
-      <div>
-        <h1>Hello, ${this.name}!</h1>
-      </div>
+        <div>
+            <h1>Hello, ${this.name}!</h1>
+        <memory-grid></memory-grid>
+        </div>
     `
     }
 
@@ -37,4 +38,4 @@ declare global {
     interface HTMLElementTagNameMap {
         'main-element': MainElement
     }
-} 
+}

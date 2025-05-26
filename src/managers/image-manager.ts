@@ -13,6 +13,7 @@ export interface CardImage {
 // Configuration options
 export interface ImageManagerConfig {
     silent: boolean;
+    cardStyle?: 'impressionist' | 'robgon';
 }
 
 // Pure function to detect test environment
@@ -104,9 +105,11 @@ export class ImageManager {
     private cardImages: CardImage[] = [];
     private backImagePath: string = import.meta.env.BASE_URL + 'Back Side.jpg';
     private silent: boolean;
+    private cardStyle: 'impressionist' | 'robgon';
 
     constructor(config?: Partial<ImageManagerConfig>) {
         this.silent = config?.silent ?? isTestEnvironment();
+        this.cardStyle = config?.cardStyle ?? 'robgon';
         this.initialize();
     }
 
@@ -115,7 +118,7 @@ export class ImageManager {
      */
     public initialize(): void {
         try {
-            this.cardImages = loadRobsCardImages(); // Using Rob's cards for now
+            this.cardImages = this.cardStyle === 'impressionist' ? loadOrigCardImages() : loadRobsCardImages();
             logImages(this.cardImages, this.silent);
         } catch (error) {
             logError(error, this.silent);
@@ -137,6 +140,23 @@ export class ImageManager {
      */
     public setSilent(silent: boolean): void {
         this.silent = silent;
+    }
+
+    /**
+     * Set the card style and reload images
+     */
+    public setCardStyle(style: 'impressionist' | 'robgon'): void {
+        if (this.cardStyle !== style) {
+            this.cardStyle = style;
+            this.initialize();
+        }
+    }
+
+    /**
+     * Get the current card style
+     */
+    public getCardStyle(): 'impressionist' | 'robgon' {
+        return this.cardStyle;
     }
 
     /**

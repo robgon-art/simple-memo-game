@@ -21,6 +21,7 @@ export class GameBoard extends LitElement {
   @state() private isVictoryMusicPlaying = false;
   @state() private cardStyleValue = 0; // State for card style slider value
   @state() private gridSizeValue = 0; // State for grid size slider value
+  @state() private isPreviewMode = false; // State to track if we're showing card preview
 
   @property({ type: Object })
   timerService: TimerService = defaultTimerService;
@@ -209,6 +210,34 @@ export class GameBoard extends LitElement {
   }
 
   /**
+   * Handle card style change
+   */
+  private handleCardStyleChange(value: number) {
+    this.cardStyleValue = value;
+    const newStyle = value === 0 ? 'impressionist' : 'robgon';
+    imageManager.setCardStyle(newStyle);
+    
+    // If game hasn't started (moves = 0), show preview
+    if (this.gameState.moves === 0) {
+      this.showCardPreview();
+    }
+  }
+
+  /**
+   * Show all cards face up for preview
+   */
+  private showCardPreview() {
+    this.isPreviewMode = true;
+    this.gameState = {
+      ...this.gameState,
+      cards: this.gameState.cards.map(card => ({
+        ...card,
+        isRevealed: true
+      }))
+    };
+  }
+
+  /**
    * Restart the game
    */
   restartGame() {
@@ -223,6 +252,9 @@ export class GameBoard extends LitElement {
 
     // Play a sound for game reset
     this.audioManager.playEffect('cardFlip');
+
+    // Reset preview mode
+    this.isPreviewMode = false;
 
     // Initialize a new game state
     this.gameState = this.initializeGameState();
@@ -264,33 +296,33 @@ export class GameBoard extends LitElement {
         <div class="game-stats">
           <p>Moves: ${this.gameState.moves}</p>
           ${this.gameState.status === GameStatus.COMPLETED
-        ? html`<p class="game-complete">Game Complete!</p>`
-        : ''}
+            ? html`<p class="game-complete">Game Complete!</p>`
+            : ''}
         </div>
         <memory-grid .numPairs=${this.gameState.cards.length / 2}>
           ${this.gameState.cards.map((card) => {
-          const props = pairAnimationProps.get(card.imageId);
-          return html`
-            <flip-card
-              .frontImage=${this.getCardImagePath(card.imageId)}
-              .backImage=${this.backImage}
-              .frontAlt=${this.getCardAltText(card.imageId)}
-              .backAlt=${this.backAlt}
-              ?revealed=${card.isRevealed}
-              ?matched=${card.isMatched}
-              ?isGameCompleted=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying}
-              .isHorizontal=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying && props?.isHorizontal}
-              .phaseOffset=${props?.phaseOffset ?? 0}
-              @card-flipped=${(e: CustomEvent) => this.handleCardFlip(e, card.id)}
-            ></flip-card>
-          `})}
+            const props = pairAnimationProps.get(card.imageId);
+            return html`
+              <flip-card
+                .frontImage=${this.getCardImagePath(card.imageId)}
+                .backImage=${this.backImage}
+                .frontAlt=${this.getCardAltText(card.imageId)}
+                .backAlt=${this.backAlt}
+                ?revealed=${card.isRevealed || this.isPreviewMode}
+                ?matched=${card.isMatched}
+                ?isGameCompleted=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying}
+                .isHorizontal=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying && props?.isHorizontal}
+                .phaseOffset=${props?.phaseOffset ?? 0}
+                @card-flipped=${(e: CustomEvent) => this.handleCardFlip(e, card.id)}
+              ></flip-card>
+            `})}
         </memory-grid>
         <div class="game-controls">
           <div class="slider-controls ${this.gameState.moves === 0 ? 'visible' : 'hidden'}">
             <div class="card-style-control">
-              <label for="cardStyleSlider" @click=${() => this.cardStyleValue = 0}>Impressionist</label>
-              <input type="range" id="cardStyleSlider" min="0" max="1" .value=${this.cardStyleValue} @input=${(e: Event) => this.cardStyleValue = parseInt((e.target as HTMLInputElement).value)}>
-              <label for="cardStyleSlider" @click=${() => this.cardStyleValue = 1}>RobGon</label>
+              <label for="cardStyleSlider" @click=${() => this.handleCardStyleChange(0)}>Impressionist</label>
+              <input type="range" id="cardStyleSlider" min="0" max="1" .value=${this.cardStyleValue} @input=${(e: Event) => this.handleCardStyleChange(parseInt((e.target as HTMLInputElement).value))}>
+              <label for="cardStyleSlider" @click=${() => this.handleCardStyleChange(1)}>RobGon</label>
             </div>
             <div class="grid-size-control">
               <label for="gridSizeSlider" @click=${() => this.gridSizeValue = 0}>Easy</label>
