@@ -18,7 +18,10 @@ describe('Game State Update Functions', () => {
             cards,
             status: GameStatus.IN_PROGRESS,
             moves: 0,
-            selectedCardIds: []
+            selectedCardIds: [],
+            isPreviewMode: false,
+            cardStyle: 'impressionist',
+            gridSize: 'easy'
         };
     };
 
@@ -142,7 +145,10 @@ describe('Game State Update Functions', () => {
                 ),
                 moves: 5,
                 status: GameStatus.VICTORY_MUSIC,
-                selectedCardIds: [3, 4]
+                selectedCardIds: [3, 4],
+                isPreviewMode: false,
+                cardStyle: 'impressionist',
+                gridSize: 'easy'
             };
 
             const newState = resetGameState(state);

@@ -3,7 +3,7 @@ import { customElement, state, property } from 'lit/decorators.js';
 import './grid';
 import './card';
 import gameBoardStyles from './game-board.css?inline';
-import { GameState, GameStatus, initializeGame } from '../models/game-state';
+import { GameState, GameStatus, initializeGameWithProgress, setPreviewMode, updateCardStyle, updateGridSize, transitionToVictoryMusic, transitionToCompleted } from '../models/game-state';
 import { selectCard } from '../functions/card-selection';
 import { processMatches } from '../functions/match-checking';
 import { clearSelectedCards } from '../functions/card-selection';
@@ -49,20 +49,13 @@ export class GameBoard extends LitElement {
     this.audioManager.addEventListener('musicStart', () => {
       this.shouldAnimateVictory = true; // Start animation when music starts
       // Update game status to VICTORY_MUSIC when music starts
-      // This happens after the match sound finishes
-      this.gameState = {
-        ...this.gameState,
-        status: GameStatus.VICTORY_MUSIC
-      };
+      this.gameState = transitionToVictoryMusic(this.gameState);
     });
 
     this.audioManager.addEventListener('musicEnd', () => {
       this.shouldAnimateVictory = false; // Stop animation when music ends
       // Update game status to COMPLETED when music ends
-      this.gameState = {
-        ...this.gameState,
-        status: GameStatus.COMPLETED
-      };
+      this.gameState = transitionToCompleted(this.gameState);
     });
   }
 
@@ -84,46 +77,11 @@ export class GameBoard extends LitElement {
       }
     }
 
-    // Create initial game state
-    const initialState = initializeGame(numPairs, shuffleCards);
+    // Parse progress parameter
+    const progress = progressParam ? parseInt(progressParam, 10) : null;
 
-    // If progress parameter exists and is valid, pre-match cards
-    if (progressParam) {
-      const progress = parseInt(progressParam, 10);
-
-      // Validate progress is between 0 and total pairs
-      if (!isNaN(progress) && progress >= 0 && progress <= numPairs) {
-        // Get the unique imageIds from the shuffled cards
-        const uniqueImageIds = Array.from(
-          new Set(initialState.cards.map(card => card.imageId))
-        );
-
-        // Select the specified number of imageIds to match
-        const imageIdsToMatch = uniqueImageIds.slice(0, progress);
-
-        // Update cards to match the pairs with the selected imageIds
-        const updatedCards = initialState.cards.map(card => {
-          if (imageIdsToMatch.includes(card.imageId)) {
-            return { ...card, isMatched: true, isRevealed: true };
-          }
-          return card;
-        });
-
-        // Return updated state with pre-matched cards and adjusted move count
-        return {
-          ...initialState,
-          cards: updatedCards,
-          moves: progress,
-          status: progress === numPairs ? GameStatus.VICTORY_MUSIC : GameStatus.IN_PROGRESS
-        };
-      }
-    }
-
-    // Return regular initial state if no valid progress parameter
-    return {
-      ...initialState,
-      status: GameStatus.READY
-    };
+    // Initialize game with progress
+    return initializeGameWithProgress(numPairs, progress, shuffleCards);
   }
 
   /**
@@ -240,9 +198,9 @@ export class GameBoard extends LitElement {
    * Handle card style change
    */
   private handleCardStyleChange(value: number) {
-    this.cardStyleValue = value;
     const newStyle = value === 0 ? 'impressionist' : 'robgon';
     imageManager.setCardStyle(newStyle);
+    this.gameState = updateCardStyle(this.gameState, newStyle);
 
     // If game hasn't started (moves = 0), show preview
     if (this.gameState.moves === 0) {
@@ -254,14 +212,7 @@ export class GameBoard extends LitElement {
    * Show all cards face up for preview
    */
   private showCardPreview() {
-    this.isPreviewMode = true;
-    this.gameState = {
-      ...this.gameState,
-      cards: this.gameState.cards.map(card => ({
-        ...card,
-        isRevealed: true
-      }))
-    };
+    this.gameState = setPreviewMode(this.gameState, true);
   }
 
   /**
@@ -286,9 +237,6 @@ export class GameBoard extends LitElement {
     // Play a sound for game reset
     this.audioManager.playEffect('cardFlip');
 
-    // Reset preview mode
-    this.isPreviewMode = false;
-
     // Set restarting state to true
     this.isRestarting = true;
 
@@ -302,7 +250,8 @@ export class GameBoard extends LitElement {
       })),
       moves: 0,
       selectedCardIds: [],
-      status: GameStatus.READY
+      status: GameStatus.READY,
+      isPreviewMode: false
     };
 
     // Wait for flip animation to complete (500ms) before shuffling
@@ -397,6 +346,9 @@ export class GameBoard extends LitElement {
       // Store current slider values
       const currentCardStyle = this.cardStyleValue;
       const currentGridSize = this.gridSizeValue;
+
+      // Update grid size in game state
+      this.gameState = updateGridSize(this.gameState, currentGridSize === 0 ? 'easy' : 'hard');
 
       this.restartGame();
 

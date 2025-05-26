@@ -18,7 +18,10 @@ describe('Match Checking Functions', () => {
             cards,
             status: GameStatus.IN_PROGRESS,
             moves: 0,
-            selectedCardIds: []
+            selectedCardIds: [],
+            isPreviewMode: false,
+            cardStyle: 'impressionist',
+            gridSize: 'easy'
         };
     };
 
@@ -79,7 +82,10 @@ describe('Match Checking Functions', () => {
             // Mark all cards as matched
             state = {
                 ...state,
-                cards: state.cards.map(card => ({ ...card, isMatched: true }))
+                cards: state.cards.map(card => ({ ...card, isMatched: true })),
+                isPreviewMode: false,
+                cardStyle: 'impressionist',
+                gridSize: 'easy'
             };
 
             expect(areAllCardsMatched(state)).toBe(true);
@@ -94,7 +100,10 @@ describe('Match Checking Functions', () => {
                 cards: state.cards.map((card, index) => ({
                     ...card,
                     isMatched: index < 2 // Only first 2 cards are matched
-                }))
+                })),
+                isPreviewMode: false,
+                cardStyle: 'impressionist',
+                gridSize: 'easy'
             };
 
             expect(areAllCardsMatched(state)).toBe(false);

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { fixture, html } from '@open-wc/testing';
 import { GameBoard } from './game-board';
 import '../components/game-board';
-import { GameStatus, initializeGame } from '../models/game-state';
+import { GameStatus, initializeGameWithProgress } from '../models/game-state';
 import { seededShuffleCards } from '../functions/shuffle';
 import { SynchronousTimerService, TimerService } from '../services/timer-service';
 import { AudioManager } from '../managers/audio-manager';
@@ -41,7 +41,7 @@ describe('GameBoard Component', () => {
         element.audioManager = mockAudioManager;
 
         // Use a seeded shuffle for consistent test results
-        element.initializeGameState = () => initializeGame(12, (cards) => seededShuffleCards(cards, 42));
+        element.initializeGameState = () => initializeGameWithProgress(12, null, (cards) => seededShuffleCards(cards, 42));
         element.gameState = element.initializeGameState();
     });
 
@@ -51,6 +51,9 @@ describe('GameBoard Component', () => {
         expect(element.gameState.status).toBe(GameStatus.READY);
         expect(element.gameState.moves).toBe(0);
         expect(element.gameState.selectedCardIds).toEqual([]);
+        expect(element.gameState.isPreviewMode).toBe(false);
+        expect(element.gameState.cardStyle).toBe('impressionist');
+        expect(element.gameState.gridSize).toBe('easy');
     });
 
     it('should reveal a card when clicked', async () => {
@@ -399,6 +402,9 @@ describe('GameBoard Component', () => {
             expect(gameState.moves).toBe(0);
             expect(gameState.status).toBe(GameStatus.READY);
             expect(gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
+            expect(gameState.isPreviewMode).toBe(false);
+            expect(gameState.cardStyle).toBe('impressionist');
+            expect(gameState.gridSize).toBe('easy');
         });
 
         it('should pre-match the specified number of pairs when valid progress parameter is present', () => {
@@ -421,6 +427,9 @@ describe('GameBoard Component', () => {
             expect(matchedPairs).toBe(5);
             expect(gameState.moves).toBe(5); // Moves should match the number of matched pairs
             expect(gameState.status).toBe(GameStatus.VICTORY_MUSIC);
+            expect(gameState.isPreviewMode).toBe(false);
+            expect(gameState.cardStyle).toBe('impressionist');
+            expect(gameState.gridSize).toBe('easy');
 
             // Verify that the matched cards form valid pairs
             const matchedImageIds = new Set(matchedCards.map(card => card.imageId));
@@ -440,6 +449,9 @@ describe('GameBoard Component', () => {
             let gameState = GameBoard.prototype.initializeGameState.call(element);
             expect(gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
             expect(gameState.moves).toBe(0);
+            expect(gameState.isPreviewMode).toBe(false);
+            expect(gameState.cardStyle).toBe('impressionist');
+            expect(gameState.gridSize).toBe('easy');
 
             // Test with negative value
             mockURLParams.set('progress', '-5');
@@ -447,6 +459,9 @@ describe('GameBoard Component', () => {
             gameState = GameBoard.prototype.initializeGameState.call(element);
             expect(gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
             expect(gameState.moves).toBe(0);
+            expect(gameState.isPreviewMode).toBe(false);
+            expect(gameState.cardStyle).toBe('impressionist');
+            expect(gameState.gridSize).toBe('easy');
 
             // Test with value greater than total pairs
             mockURLParams.set('progress', '20');
@@ -454,6 +469,9 @@ describe('GameBoard Component', () => {
             gameState = GameBoard.prototype.initializeGameState.call(element);
             expect(gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
             expect(gameState.moves).toBe(0);
+            expect(gameState.isPreviewMode).toBe(false);
+            expect(gameState.cardStyle).toBe('impressionist');
+            expect(gameState.gridSize).toBe('easy');
         });
     });
 }); 

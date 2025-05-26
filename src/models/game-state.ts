@@ -28,6 +28,9 @@ export interface GameState {
     status: GameStatus;
     moves: number;
     selectedCardIds: number[];
+    isPreviewMode: boolean;
+    cardStyle: 'impressionist' | 'robgon';
+    gridSize: 'easy' | 'hard';
 }
 
 /**
@@ -39,7 +42,10 @@ export const createInitialGameState = (): GameState => {
         cards: [],
         status: GameStatus.READY,
         moves: 0,
-        selectedCardIds: []
+        selectedCardIds: [],
+        isPreviewMode: false,
+        cardStyle: 'impressionist',
+        gridSize: 'easy'
     };
 };
 
@@ -96,7 +102,64 @@ export const initializeGame = (
         cards: shuffledCards,
         status: GameStatus.READY,
         moves: 0,
-        selectedCardIds: []
+        selectedCardIds: [],
+        isPreviewMode: false,
+        cardStyle: 'impressionist',
+        gridSize: 'easy'
+    };
+};
+
+/**
+ * Initializes a new game with progress tracking from URL parameters
+ * @param totalPairs Number of pairs to create
+ * @param progress Optional progress parameter (number of pre-matched pairs)
+ * @param shuffleFunction Optional custom shuffle function
+ * @returns A new game state with shuffled cards and optional progress
+ */
+export const initializeGameWithProgress = (
+    totalPairs: number,
+    progress: number | null,
+    shuffleFunction?: (cards: Card[]) => Card[]
+): GameState => {
+    // Create initial game state
+    const initialState = initializeGame(totalPairs, shuffleFunction);
+
+    // If progress parameter exists and is valid, pre-match cards
+    if (progress && progress > 0 && progress <= totalPairs) {
+        // Get the unique imageIds from the shuffled cards
+        const uniqueImageIds = Array.from(
+            new Set(initialState.cards.map(card => card.imageId))
+        );
+
+        // Select the specified number of imageIds to match
+        const imageIdsToMatch = uniqueImageIds.slice(0, progress);
+
+        // Update cards to match the pairs with the selected imageIds
+        const updatedCards = initialState.cards.map(card => {
+            if (imageIdsToMatch.includes(card.imageId)) {
+                return { ...card, isMatched: true, isRevealed: true };
+            }
+            return card;
+        });
+
+        // Return updated state with pre-matched cards and adjusted move count
+        return {
+            ...initialState,
+            cards: updatedCards,
+            moves: progress,
+            status: progress === totalPairs ? GameStatus.VICTORY_MUSIC : GameStatus.IN_PROGRESS,
+            isPreviewMode: false,
+            cardStyle: 'impressionist',
+            gridSize: 'easy'
+        };
+    }
+
+    // Return regular initial state if no valid progress parameter
+    return {
+        ...initialState,
+        isPreviewMode: false,
+        cardStyle: 'impressionist',
+        gridSize: 'easy'
     };
 };
 
@@ -227,4 +290,71 @@ export const resetGame = (
 ): GameState => {
     const totalPairs = state.cards.length / 2;
     return initializeGame(totalPairs, shuffleFunction);
+};
+
+/**
+ * Sets preview mode for all cards
+ * @param state Current game state
+ * @param isPreview Whether to enable preview mode
+ * @returns New game state with preview mode updated
+ */
+export const setPreviewMode = (state: GameState, isPreview: boolean): GameState => {
+    return {
+        ...state,
+        isPreviewMode: isPreview,
+        cards: state.cards.map(card => ({
+            ...card,
+            isRevealed: isPreview ? true : card.isRevealed
+        }))
+    };
+};
+
+/**
+ * Updates the card style in the game state
+ * @param state Current game state
+ * @param style New card style
+ * @returns New game state with updated card style
+ */
+export const updateCardStyle = (state: GameState, style: 'impressionist' | 'robgon'): GameState => {
+    return {
+        ...state,
+        cardStyle: style
+    };
+};
+
+/**
+ * Updates the grid size in the game state
+ * @param state Current game state
+ * @param size New grid size
+ * @returns New game state with updated grid size
+ */
+export const updateGridSize = (state: GameState, size: 'easy' | 'hard'): GameState => {
+    return {
+        ...state,
+        gridSize: size
+    };
+};
+
+/**
+ * Transitions the game state to victory music
+ * @param state Current game state
+ * @returns New game state with VICTORY_MUSIC status
+ */
+export const transitionToVictoryMusic = (state: GameState): GameState => {
+    return {
+        ...state,
+        status: GameStatus.VICTORY_MUSIC
+    };
+};
+
+/**
+ * Transitions the game state to completed
+ * @param state Current game state
+ * @returns New game state with COMPLETED status
+ */
+export const transitionToCompleted = (state: GameState): GameState => {
+    return {
+        ...state,
+        status: GameStatus.COMPLETED
+    };
 }; 
