@@ -17,7 +17,7 @@ describe('Game State Model', () => {
         it('should create a game state with default values', () => {
             const state = createInitialGameState();
             expect(state.cards).toEqual([]);
-            expect(state.status).toBe(GameStatus.IN_PROGRESS);
+            expect(state.status).toBe(GameStatus.READY);
             expect(state.moves).toBe(0);
             expect(state.selectedCardIds).toEqual([]);
         });
@@ -58,7 +58,7 @@ describe('Game State Model', () => {
         it('should initialize a game with the correct number of cards', () => {
             const state = initializeGame(3);
             expect(state.cards.length).toBe(6); // 3 pairs = 6 cards
-            expect(state.status).toBe(GameStatus.IN_PROGRESS);
+            expect(state.status).toBe(GameStatus.READY);
             expect(state.moves).toBe(0);
             expect(state.selectedCardIds).toEqual([]);
         });
@@ -244,7 +244,7 @@ describe('Game State Model', () => {
             expect(state.selectedCardIds).toContain(card2.id);
         });
 
-        it('should update game status to COMPLETED when all cards are matched', () => {
+        it('should update game status to VICTORY_MUSIC when all cards are matched', () => {
             let state = initializeGame(1); // Just one pair for simplicity
 
             // Find the pair of cards
@@ -258,8 +258,8 @@ describe('Game State Model', () => {
             // Check for matches
             state = checkForMatches(state);
 
-            // Game status should be COMPLETED
-            expect(state.status).toBe(GameStatus.COMPLETED);
+            // Game status should be VICTORY_MUSIC
+            expect(state.status).toBe(GameStatus.VICTORY_MUSIC);
         });
 
         it('should not change anything if less than 2 cards are selected', () => {
@@ -369,7 +369,7 @@ describe('Game State Model', () => {
             state = resetGame(state);
 
             // Check that game is reset
-            expect(state.status).toBe(GameStatus.IN_PROGRESS);
+            expect(state.status).toBe(GameStatus.READY);
             expect(state.moves).toBe(0);
             expect(state.selectedCardIds).toEqual([]);
 

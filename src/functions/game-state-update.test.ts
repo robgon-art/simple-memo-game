@@ -79,7 +79,7 @@ describe('Game State Update Functions', () => {
             expect(newState.selectedCardIds).toEqual([]);
         });
 
-        it('should mark the game as completed when all cards are matched', () => {
+        it('should mark the game as VICTORY_MUSIC when all cards are matched', () => {
             let state = createTestGameState();
 
             // Mark all but 2 cards as matched
@@ -102,8 +102,8 @@ describe('Game State Update Functions', () => {
             // All cards should be matched now
             expect(newState.cards.every(card => card.isMatched)).toBe(true);
 
-            // Game status should be COMPLETED
-            expect(newState.status).toBe(GameStatus.COMPLETED);
+            // Game status should be VICTORY_MUSIC
+            expect(newState.status).toBe(GameStatus.VICTORY_MUSIC);
         });
 
         it('should not update the state when fewer than 2 cards are selected', () => {
@@ -141,14 +141,14 @@ describe('Game State Update Functions', () => {
                         : card
                 ),
                 moves: 5,
-                status: GameStatus.IN_PROGRESS,
+                status: GameStatus.VICTORY_MUSIC,
                 selectedCardIds: [3, 4]
             };
 
             const newState = resetGameState(state);
 
             // Check that the game is reset
-            expect(newState.status).toBe(GameStatus.IN_PROGRESS);
+            expect(newState.status).toBe(GameStatus.READY);
             expect(newState.moves).toBe(0);
             expect(newState.selectedCardIds).toEqual([]);
 

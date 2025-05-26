@@ -181,7 +181,7 @@ describe('Match Checking Functions', () => {
             expect(newState.selectedCardIds).toEqual([1, 3]);
         });
 
-        it('should update game status to COMPLETED when all cards are matched', () => {
+        it('should update game status to VICTORY_MUSIC when all cards are matched', () => {
             let state = createTestGameState();
 
             // Mark all cards except two as matched
@@ -196,8 +196,8 @@ describe('Match Checking Functions', () => {
 
             const newState = processMatches(state);
 
-            // Game status should be updated to COMPLETED
-            expect(newState.status).toBe(GameStatus.COMPLETED);
+            // Game status should be updated to VICTORY_MUSIC
+            expect(newState.status).toBe(GameStatus.VICTORY_MUSIC);
         });
 
         it('should not update game status when not all cards are matched', () => {

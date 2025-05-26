@@ -113,9 +113,7 @@ export class GameBoard extends LitElement {
         return {
           ...initialState,
           cards: updatedCards,
-          // Set moves to the number of matches (one move per match)
           moves: progress,
-          // Game is in victory music state if all pairs are matched
           status: progress === numPairs ? GameStatus.VICTORY_MUSIC : GameStatus.IN_PROGRESS
         };
       }
@@ -135,6 +133,12 @@ export class GameBoard extends LitElement {
     // Prevent default handling
     event.stopPropagation();
 
+    // Get the card that was clicked
+    const clickedCard = this.gameState.cards.find(card => card.id === cardId);
+    if (!clickedCard || clickedCard.isRevealed || clickedCard.isMatched) {
+      return; // Ignore clicks on already revealed or matched cards
+    }
+
     // If game is in READY state, change to IN_PROGRESS
     if (this.gameState.status === GameStatus.READY) {
       this.gameState = {
@@ -148,7 +152,7 @@ export class GameBoard extends LitElement {
 
     // If there's a pending timer for clearing mismatched cards
     // and the user clicks a new card, clear the cards immediately
-    if (this.matchCheckTimer !== null && this.gameState.selectedCardIds.length === 2 && !this.gameState.cards.find(card => card.id === cardId)?.isRevealed) {
+    if (this.matchCheckTimer !== null && this.gameState.selectedCardIds.length === 2) {
       // Clear the timeout
       this.timerService.clearTimeout(this.matchCheckTimer);
       this.matchCheckTimer = null;
@@ -295,18 +299,16 @@ export class GameBoard extends LitElement {
         ...card,
         isRevealed: false,
         isMatched: false
-      }))
+      })),
+      moves: 0,
+      selectedCardIds: [],
+      status: GameStatus.READY
     };
 
     // Wait for flip animation to complete (500ms) before shuffling
     this.timerService.setTimeout(() => {
       // Initialize a new game state
       this.gameState = this.initializeGameState();
-      // Preserve the current slider values
-      this.gameState = {
-        ...this.gameState,
-        status: GameStatus.READY
-      };
       this.isRestarting = false;
     }, 500);
   }

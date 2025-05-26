@@ -4,7 +4,7 @@
  * Pure functions for updating the overall game state based on the current state.
  */
 
-import { GameState, GameStatus, Card } from '../models/game-state';
+import { GameState, GameStatus, Card, initializeGame } from '../models/game-state';
 import { processMatches } from './match-checking';
 import { clearSelectedCards } from './card-selection';
 
@@ -49,37 +49,9 @@ export const resetGameState = (
     state: GameState,
     shuffleFunction?: (cards: Card[]) => Card[]
 ): GameState => {
-    // Create a fresh set of cards based on the current number of cards
     const totalPairs = state.cards.length / 2;
-
-    // Create all the card pairs
-    const cards: Card[] = [];
-    for (let imageId = 1; imageId <= totalPairs; imageId++) {
-        // First card of the pair
-        cards.push({
-            id: (imageId * 2) - 1,
-            imageId,
-            isRevealed: false,
-            isMatched: false
-        });
-
-        // Second card of the pair
-        cards.push({
-            id: imageId * 2,
-            imageId,
-            isRevealed: false,
-            isMatched: false
-        });
-    }
-
-    // Shuffle the cards if a shuffle function is provided
-    const shuffledCards = shuffleFunction ? shuffleFunction(cards) : cards;
-
-    // Return a new game state with the reset and shuffled cards
     return {
-        cards: shuffledCards,
-        status: GameStatus.IN_PROGRESS,
-        moves: 0,
-        selectedCardIds: []
+        ...initializeGame(totalPairs, shuffleFunction),
+        status: GameStatus.READY
     };
 }; 

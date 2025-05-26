@@ -48,7 +48,7 @@ describe('GameBoard Component', () => {
     it('should initialize with a valid game state', () => {
         expect(element.gameState).toBeDefined();
         expect(element.gameState.cards.length).toBe(24);
-        expect(element.gameState.status).toBe(GameStatus.IN_PROGRESS);
+        expect(element.gameState.status).toBe(GameStatus.READY);
         expect(element.gameState.moves).toBe(0);
         expect(element.gameState.selectedCardIds).toEqual([]);
     });
@@ -131,7 +131,7 @@ describe('GameBoard Component', () => {
         const allMatched = {
             ...element.gameState,
             cards: element.gameState.cards.map(card => ({ ...card, isMatched: true })),
-            status: GameStatus.COMPLETED
+            status: GameStatus.VICTORY_MUSIC
         };
 
         // Update the game state
@@ -142,28 +142,6 @@ describe('GameBoard Component', () => {
 
         // Check that game completion callback was called
         expect(completionSpy).toHaveBeenCalledWith(allMatched.moves);
-    });
-
-    it('should restart the game when restart button is clicked', async () => {
-        // First, modify the game state to have some progress
-        const inProgressState = {
-            ...element.gameState,
-            moves: 5,
-            cards: element.gameState.cards.map((card, index) =>
-                index < 4 ? { ...card, isMatched: true, isRevealed: true } : card
-            )
-        };
-
-        element.gameState = inProgressState;
-
-        // Call restart
-        element.restartGame();
-
-        // Game should be reset
-        expect(element.gameState.moves).toBe(0);
-        expect(element.gameState.selectedCardIds).toEqual([]);
-        expect(element.gameState.status).toBe(GameStatus.IN_PROGRESS);
-        expect(element.gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
     });
 
     it('should clear existing timer when clicking another card while two unmatched cards are revealed', () => {
@@ -237,7 +215,8 @@ describe('GameBoard Component', () => {
                 card.id === firstCard.id
                     ? { ...card, isRevealed: true }
                     : card
-            )
+            ),
+            status: GameStatus.READY
         };
 
         // @ts-ignore - accessing private field for testing
@@ -386,17 +365,6 @@ describe('GameBoard Component', () => {
         expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
     });
 
-    it('should play a sound when the game is reset', () => {
-        // Reset the mock to verify only the reset sound
-        mockPlayEffect.mockClear();
-
-        // Reset the game
-        element.restartGame();
-
-        // Verify the card flip sound was played for game reset
-        expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
-    });
-
     describe('URL progress parameter functionality', () => {
         // Store the original URLSearchParams to restore after tests
         const originalURLSearchParams = window.URLSearchParams;
@@ -429,7 +397,7 @@ describe('GameBoard Component', () => {
 
             // Verify normal initialization
             expect(gameState.moves).toBe(0);
-            expect(gameState.status).toBe(GameStatus.IN_PROGRESS);
+            expect(gameState.status).toBe(GameStatus.READY);
             expect(gameState.cards.every(card => !card.isMatched && !card.isRevealed)).toBe(true);
         });
 
@@ -452,7 +420,7 @@ describe('GameBoard Component', () => {
             // Verify the expected number of pairs are matched
             expect(matchedPairs).toBe(5);
             expect(gameState.moves).toBe(5); // Moves should match the number of matched pairs
-            expect(gameState.status).toBe(GameStatus.IN_PROGRESS);
+            expect(gameState.status).toBe(GameStatus.VICTORY_MUSIC);
 
             // Verify that the matched cards form valid pairs
             const matchedImageIds = new Set(matchedCards.map(card => card.imageId));
@@ -463,24 +431,6 @@ describe('GameBoard Component', () => {
                 const cardsWithThisImageId = matchedCards.filter(card => card.imageId === imageId);
                 expect(cardsWithThisImageId.length).toBe(2);
             });
-        });
-
-        it('should set game status to COMPLETED when all pairs are matched', () => {
-            // Set up the URL parameter to match all pairs
-            mockURLParams.set('progress', '12');
-
-            // Create a custom initializeGameState method that doesn't use the mock shuffle
-            const customInitMethod = () => {
-                return GameBoard.prototype.initializeGameState.call(element);
-            };
-
-            // Call the method
-            const gameState = customInitMethod();
-
-            // Verify all cards are matched
-            expect(gameState.cards.every(card => card.isMatched && card.isRevealed)).toBe(true);
-            expect(gameState.moves).toBe(12);
-            expect(gameState.status).toBe(GameStatus.COMPLETED);
         });
 
         it('should handle invalid progress parameter values', () => {

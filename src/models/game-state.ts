@@ -37,7 +37,7 @@ export interface GameState {
 export const createInitialGameState = (): GameState => {
     return {
         cards: [],
-        status: GameStatus.IN_PROGRESS,
+        status: GameStatus.READY,
         moves: 0,
         selectedCardIds: []
     };
@@ -94,7 +94,7 @@ export const initializeGame = (
 
     return {
         cards: shuffledCards,
-        status: GameStatus.IN_PROGRESS,
+        status: GameStatus.READY,
         moves: 0,
         selectedCardIds: []
     };
