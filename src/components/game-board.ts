@@ -63,7 +63,7 @@ export class GameBoard extends LitElement {
     const numPairsParam = urlParams.get('num_pairs');
 
     // Validate and set number of pairs
-    let numPairs = 12;
+    let numPairs = this.gridSizeValue === 0 ? 5 : 12; // 5 pairs for easy, 12 pairs for hard
     if (numPairsParam) {
       const parsedPairs = parseInt(numPairsParam, 10);
       if (!isNaN(parsedPairs) && parsedPairs >= 2 && parsedPairs <= 12) {
@@ -305,6 +305,15 @@ export class GameBoard extends LitElement {
   }
 
   static styles = unsafeCSS(gameBoardStyles);
+
+  // Watch for gridSizeValue changes
+  updated(changedProperties: Map<string, any>) {
+    if (changedProperties.has('gridSizeValue')) {
+      this.restartGame();
+      // Force a grid layout recalculation by triggering a resize event
+      window.dispatchEvent(new Event('resize'));
+    }
+  }
 }
 
 declare global {

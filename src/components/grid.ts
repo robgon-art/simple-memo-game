@@ -13,6 +13,13 @@ export class Grid extends LitElement {
     this.resizeObserver = new ResizeObserver(() => this.updateCardSizes());
   }
 
+  // Watch for numPairs changes
+  updated(changedProperties: Map<string, any>) {
+    if (changedProperties.has('numPairs')) {
+      this.updateCardSizes();
+    }
+  }
+
   connectedCallback() {
     super.connectedCallback();
     this.resizeObserver.observe(this);
