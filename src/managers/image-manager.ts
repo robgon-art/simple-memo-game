@@ -39,8 +39,8 @@ export const createCardImage = (path: string, index: number): CardImage => ({
     path
 });
 
-// Pure function to load card images
-export const loadCardImages = (): CardImage[] => {
+// Pure function to load original card images
+export const loadOrigCardImages = (): CardImage[] => {
     // In Vite, assets in the public directory are referenced directly by URL
     const cardPaths = [
         import.meta.env.BASE_URL + 'cards/A Sunday Afternoon on the Island of La Grande Jatte, Georges Seurat, 1884.jpg',
@@ -58,6 +58,26 @@ export const loadCardImages = (): CardImage[] => {
     ];
 
     // Convert the paths to CardImage objects using pure function
+    return cardPaths.map(createCardImage);
+};
+
+// Pure function to load Rob's card images
+export const loadRobsCardImages = (): CardImage[] => {
+    const cardPaths = [
+        import.meta.env.BASE_URL + 'rob_cards/pop pug.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/pop greyhound.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/pop corgi.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/pop amstaff.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/blue lady 1.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/blue lady 2.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/blue lady 3.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/blue lady 4.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/dow explore loch ness.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/dow escape to mars.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/dow discover roswell.jpg',
+        import.meta.env.BASE_URL + 'rob_cards/dow atlantis awaits.jpg'
+    ];
+
     return cardPaths.map(createCardImage);
 };
 
@@ -95,7 +115,7 @@ export class ImageManager {
      */
     public initialize(): void {
         try {
-            this.cardImages = loadCardImages();
+            this.cardImages = loadRobsCardImages(); // Using Rob's cards for now
             logImages(this.cardImages, this.silent);
         } catch (error) {
             logError(error, this.silent);

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, vi, afterEach } from 'vitest';
-import { imageManager, ImageManager, isTestEnvironment, extractNameFromPath, createCardImage, loadCardImages, logImages, logError, CardImage } from './image-manager';
+import { imageManager, ImageManager, isTestEnvironment, extractNameFromPath, createCardImage, loadOrigCardImages, logImages, logError, CardImage } from './image-manager';
 
 // Explicitly ensure silent mode is set
 imageManager.setSilent(true);
@@ -41,8 +41,8 @@ describe('ImageManager Module', () => {
             });
         });
 
-        it('loadCardImages returns an array of all card images', () => {
-            const images = loadCardImages();
+        it('loadOrigCardImages returns an array of all card images', () => {
+            const images = loadOrigCardImages();
             expect(images).toBeInstanceOf(Array);
             expect(images.length).toBe(12);
 
