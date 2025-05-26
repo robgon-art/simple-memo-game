@@ -25,7 +25,7 @@ export const updateGameState = (state: GameState): GameState => {
     const stateWithMatches = processMatches(state);
 
     // Check if we just completed the game
-    if (stateWithMatches.status === GameStatus.COMPLETED) {
+    if (stateWithMatches.status === GameStatus.VICTORY_MUSIC) {
         return stateWithMatches;
     }
 

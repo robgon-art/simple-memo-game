@@ -18,11 +18,11 @@ export type GameCompletionCallback = (moves: number) => void;
 @customElement('memory-game-board')
 export class GameBoard extends LitElement {
   @state() gameState: GameState;
-  @state() private isVictoryMusicPlaying = false;
   @state() private cardStyleValue = 0; // State for card style slider value
   @state() private gridSizeValue = 0; // State for grid size slider value
   @state() private isPreviewMode = false; // State to track if we're showing card preview
   @state() private isRestarting = false; // State to track if we're in the process of restarting
+  @state() private shouldAnimateVictory = false; // State to control victory animation
 
   @property({ type: Object })
   timerService: TimerService = defaultTimerService;
@@ -47,11 +47,22 @@ export class GameBoard extends LitElement {
 
     // Listen for music start/end events
     this.audioManager.addEventListener('musicStart', () => {
-      this.isVictoryMusicPlaying = true;
+      this.shouldAnimateVictory = true; // Start animation when music starts
+      // Update game status to VICTORY_MUSIC when music starts
+      // This happens after the match sound finishes
+      this.gameState = {
+        ...this.gameState,
+        status: GameStatus.VICTORY_MUSIC
+      };
     });
 
     this.audioManager.addEventListener('musicEnd', () => {
-      this.isVictoryMusicPlaying = false;
+      this.shouldAnimateVictory = false; // Stop animation when music ends
+      // Update game status to COMPLETED when music ends
+      this.gameState = {
+        ...this.gameState,
+        status: GameStatus.COMPLETED
+      };
     });
   }
 
@@ -104,14 +115,17 @@ export class GameBoard extends LitElement {
           cards: updatedCards,
           // Set moves to the number of matches (one move per match)
           moves: progress,
-          // Game is completed if all pairs are matched
-          status: progress === numPairs ? GameStatus.COMPLETED : GameStatus.IN_PROGRESS
+          // Game is in victory music state if all pairs are matched
+          status: progress === numPairs ? GameStatus.VICTORY_MUSIC : GameStatus.IN_PROGRESS
         };
       }
     }
 
     // Return regular initial state if no valid progress parameter
-    return initialState;
+    return {
+      ...initialState,
+      status: GameStatus.READY
+    };
   }
 
   /**
@@ -120,6 +134,14 @@ export class GameBoard extends LitElement {
   handleCardFlip(event: CustomEvent, cardId: number) {
     // Prevent default handling
     event.stopPropagation();
+
+    // If game is in READY state, change to IN_PROGRESS
+    if (this.gameState.status === GameStatus.READY) {
+      this.gameState = {
+        ...this.gameState,
+        status: GameStatus.IN_PROGRESS
+      };
+    }
 
     // Play card flip sound
     this.audioManager.playEffect('cardFlip');
@@ -195,7 +217,7 @@ export class GameBoard extends LitElement {
     }
 
     // Check for game completion
-    if (this.gameState.status === GameStatus.COMPLETED) {
+    if (this.gameState.status === GameStatus.VICTORY_MUSIC) {
       this.handleGameCompletion();
     }
   }
@@ -206,8 +228,8 @@ export class GameBoard extends LitElement {
   handleGameCompletion() {
     // Call the completion callback
     this.onGameCompleted(this.gameState.moves);
-
-    // The completion music is now handled in match-checking.ts after the aero chime
+    // Note: Victory music and state transition to VICTORY_MUSIC
+    // will be handled by the match sound's onended event
   }
 
   /**
@@ -217,7 +239,7 @@ export class GameBoard extends LitElement {
     this.cardStyleValue = value;
     const newStyle = value === 0 ? 'impressionist' : 'robgon';
     imageManager.setCardStyle(newStyle);
-    
+
     // If game hasn't started (moves = 0), show preview
     if (this.gameState.moves === 0) {
       this.showCardPreview();
@@ -254,6 +276,9 @@ export class GameBoard extends LitElement {
     // Stop any playing music
     this.audioManager.stopMusic();
 
+    // Reset animation state
+    this.shouldAnimateVictory = false;
+
     // Play a sound for game reset
     this.audioManager.playEffect('cardFlip');
 
@@ -277,6 +302,11 @@ export class GameBoard extends LitElement {
     this.timerService.setTimeout(() => {
       // Initialize a new game state
       this.gameState = this.initializeGameState();
+      // Preserve the current slider values
+      this.gameState = {
+        ...this.gameState,
+        status: GameStatus.READY
+      };
       this.isRestarting = false;
     }, 500);
   }
@@ -317,13 +347,13 @@ export class GameBoard extends LitElement {
         <div class="game-stats">
           <p>Moves: ${this.gameState.moves}</p>
           ${this.gameState.status === GameStatus.COMPLETED
-            ? html`<p class="game-complete">Game Complete!</p>`
-            : ''}
+        ? html`<p class="game-complete">Game Complete!</p>`
+        : ''}
         </div>
         <memory-grid .numPairs=${this.gameState.cards.length / 2}>
           ${this.gameState.cards.map((card) => {
-            const props = pairAnimationProps.get(card.imageId);
-            return html`
+          const props = pairAnimationProps.get(card.imageId);
+          return html`
               <flip-card
                 .frontImage=${this.getCardImagePath(card.imageId)}
                 .backImage=${this.backImage}
@@ -331,15 +361,15 @@ export class GameBoard extends LitElement {
                 .backAlt=${this.backAlt}
                 ?revealed=${card.isRevealed || this.isPreviewMode}
                 ?matched=${card.isMatched}
-                ?isGameCompleted=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying}
-                .isHorizontal=${this.gameState.status === GameStatus.COMPLETED && this.isVictoryMusicPlaying && props?.isHorizontal}
+                ?isGameCompleted=${this.shouldAnimateVictory}
+                .isHorizontal=${this.shouldAnimateVictory && props?.isHorizontal}
                 .phaseOffset=${props?.phaseOffset ?? 0}
                 @card-flipped=${(e: CustomEvent) => this.handleCardFlip(e, card.id)}
               ></flip-card>
             `})}
         </memory-grid>
         <div class="game-controls">
-          <div class="slider-controls ${this.gameState.moves === 0 ? 'visible' : 'hidden'}">
+          <div class="slider-controls ${(this.gameState.status === GameStatus.READY || this.gameState.status === GameStatus.COMPLETED) ? 'visible' : 'hidden'}">
             <div class="card-style-control">
               <label for="cardStyleSlider" @click=${() => this.handleCardStyleChange(0)}>Impressionist</label>
               <input type="range" id="cardStyleSlider" min="0" max="1" .value=${this.cardStyleValue} @input=${(e: Event) => this.handleCardStyleChange(parseInt((e.target as HTMLInputElement).value))}>
@@ -362,7 +392,16 @@ export class GameBoard extends LitElement {
   // Watch for gridSizeValue changes
   updated(changedProperties: Map<string, any>) {
     if (changedProperties.has('gridSizeValue')) {
+      // Store current slider values
+      const currentCardStyle = this.cardStyleValue;
+      const currentGridSize = this.gridSizeValue;
+
       this.restartGame();
+
+      // Restore slider values after restart
+      this.cardStyleValue = currentCardStyle;
+      this.gridSizeValue = currentGridSize;
+
       // Force a grid layout recalculation by triggering a resize event
       window.dispatchEvent(new Event('resize'));
     }

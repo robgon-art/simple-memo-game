@@ -67,13 +67,14 @@ export const processMatches = (state: GameState): GameState => {
     // Play match sound if cards match
     if (isMatch) {
         // Check if this is the final match
-        const willBeCompleted = state.cards.filter(card => 
+        const willBeCompleted = state.cards.filter(card =>
             card.isMatched || state.selectedCardIds.includes(card.id)
         ).length === state.cards.length;
 
         if (willBeCompleted) {
             // For final match, play victory sound after match sound
             matchSound.onended = () => {
+                // Only start victory music after match sound finishes
                 audioManager.playMusic('gameComplete');
             };
         } else {
@@ -81,6 +82,7 @@ export const processMatches = (state: GameState): GameState => {
             matchSound.onended = null;
         }
 
+        // Play the match sound
         matchSound.play().catch(error => {
             console.error('Error playing match sound:', error);
         });
@@ -100,11 +102,12 @@ export const processMatches = (state: GameState): GameState => {
     // Check if all cards are matched after this update
     const allMatched = updatedCards.every(card => card.isMatched);
 
-    // Update the game state
+    // Only update to VICTORY_MUSIC state after match sound finishes
+    // This will be handled by the audio manager's musicStart event
     return {
         ...state,
         cards: updatedCards,
-        status: allMatched ? GameStatus.COMPLETED : state.status,
+        status: allMatched ? GameStatus.VICTORY_MUSIC : state.status,
         // Clear selected cards if they match, otherwise keep them selected
         selectedCardIds: isMatch ? [] : state.selectedCardIds
     };

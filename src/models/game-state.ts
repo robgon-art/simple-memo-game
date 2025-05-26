@@ -8,7 +8,9 @@ import { CardImage, imageManager } from '../managers/image-manager';
 
 // Game status enum
 export enum GameStatus {
+    READY = 'ready',
     IN_PROGRESS = 'in_progress',
+    VICTORY_MUSIC = 'victory_music',
     COMPLETED = 'completed'
 }
 
@@ -176,7 +178,7 @@ export const checkForMatches = (state: GameState): GameState => {
 
     // Check if all cards are matched to update game status
     const allMatched = updatedCards.every(card => card.isMatched);
-    const updatedStatus = allMatched ? GameStatus.COMPLETED : state.status;
+    const updatedStatus = allMatched ? GameStatus.VICTORY_MUSIC : state.status;
 
     return {
         ...state,
