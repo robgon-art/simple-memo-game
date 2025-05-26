@@ -23,10 +23,10 @@ export const isTestEnvironment = (): boolean =>
 // Pure function to extract name from image path
 export const extractNameFromPath = (path: string): string => {
     const filename = path.split('/').pop() || '';
-    
+
     // Remove file extension first
     const nameWithoutExtension = filename.replace(/\.[^.]+$/, '');
-    
+
     // Then split by comma and take the first part
     const nameParts = nameWithoutExtension.split(',')[0].trim().split(' ');
     return nameParts.slice(0, Math.min(3, nameParts.length)).join(' ');
@@ -138,6 +138,32 @@ export class ImageManager {
      */
     public getCardBackImagePath(): string {
         return this.backImagePath;
+    }
+
+    /**
+     * Get the total number of available card images
+     * @returns The total number of unique card images available
+     */
+    public getTotalCardImages(): number {
+        return this.cardImages.length;
+    }
+
+    /**
+     * Get a random selection of card images
+     * @param numPairs Number of pairs to select
+     * @returns Array of randomly selected card images
+     * @throws Error if numPairs exceeds available images
+     */
+    public getRandomCardImages(numPairs: number): CardImage[] {
+        if (numPairs > this.cardImages.length) {
+            throw new Error(`Cannot select ${numPairs} pairs: only ${this.cardImages.length} images available`);
+        }
+
+        // Create a copy of all images and shuffle them
+        const shuffledImages = [...this.cardImages].sort(() => Math.random() - 0.5);
+
+        // Take the first numPairs images
+        return shuffledImages.slice(0, numPairs);
     }
 
     /**

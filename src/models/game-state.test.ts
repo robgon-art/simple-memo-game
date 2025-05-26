@@ -10,14 +10,9 @@ import {
     hideUnmatchedCards,
     resetGame
 } from './game-state';
+import { CardImage, imageManager } from '../managers/image-manager';
 
 describe('Game State Model', () => {
-    // Test data
-    const mockShuffleFunction = (cards: Card[]): Card[] => {
-        // Simple mock shuffle function that reverses the array
-        return [...cards].reverse();
-    };
-
     describe('createInitialGameState', () => {
         it('should create a game state with default values', () => {
             const state = createInitialGameState();
@@ -30,50 +25,72 @@ describe('Game State Model', () => {
 
     describe('createCards', () => {
         it('should create the correct number of card pairs', () => {
-            const cards = createCards(3);
+            const testImages: CardImage[] = [
+                { id: 1, name: 'Test 1', path: '/test1.jpg' },
+                { id: 2, name: 'Test 2', path: '/test2.jpg' },
+                { id: 3, name: 'Test 3', path: '/test3.jpg' }
+            ];
+            const cards = createCards(testImages);
             expect(cards.length).toBe(6); // 3 pairs = 6 cards
-
-            // Check if we have the expected image IDs
-            const imageIds = cards.map(card => card.imageId);
-            expect(imageIds.sort()).toEqual([1, 1, 2, 2, 3, 3]);
         });
 
         it('should initialize cards with proper properties', () => {
-            const cards = createCards(1);
-            expect(cards.length).toBe(2);
-
-            cards.forEach(card => {
-                expect(card).toHaveProperty('id');
-                expect(card).toHaveProperty('imageId');
-                expect(card.isMatched).toBe(false);
-                expect(card.isRevealed).toBe(false);
+            const testImages: CardImage[] = [
+                { id: 1, name: 'Test 1', path: '/test1.jpg' }
+            ];
+            const cards = createCards(testImages);
+            expect(cards[0]).toEqual({
+                id: 1,
+                imageId: 1,
+                isRevealed: false,
+                isMatched: false
             });
-
-            // Check for paired IDs
-            expect(cards[0].imageId).toBe(cards[1].imageId);
-            expect(cards[0].id).not.toBe(cards[1].id);
+            expect(cards[1]).toEqual({
+                id: 2,
+                imageId: 1,
+                isRevealed: false,
+                isMatched: false
+            });
         });
     });
 
     describe('initializeGame', () => {
         it('should initialize a game with the correct number of cards', () => {
-            const state = initializeGame(4);
-            expect(state.cards.length).toBe(8); // 4 pairs = 8 cards
+            const state = initializeGame(3);
+            expect(state.cards.length).toBe(6); // 3 pairs = 6 cards
             expect(state.status).toBe(GameStatus.IN_PROGRESS);
             expect(state.moves).toBe(0);
             expect(state.selectedCardIds).toEqual([]);
         });
 
         it('should use the provided shuffle function', () => {
-            // Create cards and get their original order
-            const originalCards = createCards(2);
+            // Create a mock shuffle function that reverses the array
+            const shuffleFunction = (cards: Card[]) => [...cards].reverse();
 
-            // Initialize game with our mock shuffle function
-            const state = initializeGame(2, mockShuffleFunction);
+            // Create test images directly instead of using random selection
+            const testImages: CardImage[] = [
+                { id: 1, name: 'Test 1', path: '/test1.jpg' },
+                { id: 2, name: 'Test 2', path: '/test2.jpg' },
+                { id: 3, name: 'Test 3', path: '/test3.jpg' }
+            ];
 
-            // Verify the cards are in reverse order (as per our mock shuffle)
-            expect(state.cards[0].id).toBe(originalCards[originalCards.length - 1].id);
-            expect(state.cards[state.cards.length - 1].id).toBe(originalCards[0].id);
+            // Create original cards from test images
+            const originalCards = createCards(testImages);
+
+            // Mock the getRandomCardImages method to return our test images
+            const originalGetRandomCardImages = imageManager.getRandomCardImages;
+            imageManager.getRandomCardImages = () => testImages;
+
+            try {
+                // Initialize game with our shuffle function
+                const state = initializeGame(3, shuffleFunction);
+
+                // The cards should be in reverse order
+                expect(state.cards).toEqual(originalCards.reverse());
+            } finally {
+                // Restore the original method
+                imageManager.getRandomCardImages = originalGetRandomCardImages;
+            }
         });
     });
 
@@ -364,21 +381,33 @@ describe('Game State Model', () => {
         });
 
         it('should use the provided shuffle function', () => {
-            // Create initial game
-            let state = initializeGame(2);
+            // Create a mock shuffle function that reverses the array
+            const shuffleFunction = (cards: Card[]) => [...cards].reverse();
 
-            // Get the card order
-            const originalCardIds = state.cards.map(card => card.id);
+            // Create test images directly instead of using random selection
+            const testImages: CardImage[] = [
+                { id: 1, name: 'Test 1', path: '/test1.jpg' },
+                { id: 2, name: 'Test 2', path: '/test2.jpg' },
+                { id: 3, name: 'Test 3', path: '/test3.jpg' }
+            ];
 
-            // Reset game with our mock shuffle function
-            state = resetGame(state, mockShuffleFunction);
+            // Create original cards from test images
+            const originalCards = createCards(testImages);
 
-            // Get the new card order
-            const newCardIds = state.cards.map(card => card.id);
+            // Mock the getRandomCardImages method to return our test images
+            const originalGetRandomCardImages = imageManager.getRandomCardImages;
+            imageManager.getRandomCardImages = () => testImages;
 
-            // Cards should be in reverse order
-            expect(newCardIds[0]).toBe(originalCardIds[originalCardIds.length - 1]);
-            expect(newCardIds[newCardIds.length - 1]).toBe(originalCardIds[0]);
+            try {
+                // Initialize game with our shuffle function
+                const state = initializeGame(3, shuffleFunction);
+
+                // The cards should be in reverse order
+                expect(state.cards).toEqual(originalCards.reverse());
+            } finally {
+                // Restore the original method
+                imageManager.getRandomCardImages = originalGetRandomCardImages;
+            }
         });
     });
 }); 

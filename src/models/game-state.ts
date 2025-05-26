@@ -4,6 +4,8 @@
  * Implements game state using functional programming principles with immutable data structures.
  */
 
+import { CardImage, imageManager } from '../managers/image-manager';
+
 // Game status enum
 export enum GameStatus {
     IN_PROGRESS = 'in_progress',
@@ -41,30 +43,30 @@ export const createInitialGameState = (): GameState => {
 
 /**
  * Creates a deck of cards with pairs of matching images
- * @param totalPairs Number of image pairs to create
+ * @param images Array of card images to create pairs from
  * @returns Array of unshuffled cards
  */
-export const createCards = (totalPairs: number): Card[] => {
+export const createCards = (images: CardImage[]): Card[] => {
     const cards: Card[] = [];
 
     // Create pairs of cards with the same imageId
-    for (let imageId = 1; imageId <= totalPairs; imageId++) {
+    images.forEach((image, index) => {
         // First card of the pair
         cards.push({
-            id: (imageId * 2) - 1,
-            imageId,
+            id: (index * 2) + 1,
+            imageId: image.id,
             isRevealed: false,
             isMatched: false
         });
 
         // Second card of the pair
         cards.push({
-            id: imageId * 2,
-            imageId,
+            id: (index * 2) + 2,
+            imageId: image.id,
             isRevealed: false,
             isMatched: false
         });
-    }
+    });
 
     return cards;
 };
@@ -79,7 +81,13 @@ export const initializeGame = (
     totalPairs: number = 12,
     shuffleFunction?: (cards: Card[]) => Card[]
 ): GameState => {
-    const cards = createCards(totalPairs);
+    // Get random selection of card images
+    const selectedImages = imageManager.getRandomCardImages(totalPairs);
+
+    // Create cards from the selected images
+    const cards = createCards(selectedImages);
+
+    // Shuffle the cards if a shuffle function is provided
     const shuffledCards = shuffleFunction ? shuffleFunction(cards) : cards;
 
     return {
