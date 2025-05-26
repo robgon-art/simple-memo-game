@@ -286,15 +286,17 @@ export class GameBoard extends LitElement {
           `})}
         </memory-grid>
         <div class="game-controls">
-          <div class="card-style-control">
-            <label for="cardStyleSlider" @click=${() => this.cardStyleValue = 0}>Impressionist</label>
-            <input type="range" id="cardStyleSlider" min="0" max="1" .value=${this.cardStyleValue} @input=${(e: Event) => this.cardStyleValue = parseInt((e.target as HTMLInputElement).value)}>
-            <label for="cardStyleSlider" @click=${() => this.cardStyleValue = 1}>RobGon</label>
-          </div>
-          <div class="grid-size-control">
-            <label for="gridSizeSlider" @click=${() => this.gridSizeValue = 0}>Easy</label>
-            <input type="range" id="gridSizeSlider" min="0" max="1" .value=${this.gridSizeValue} @input=${(e: Event) => this.gridSizeValue = parseInt((e.target as HTMLInputElement).value)}>
-            <label for="gridSizeSlider" @click=${() => this.gridSizeValue = 1}>Hard</label>
+          <div class="slider-controls ${this.gameState.moves === 0 ? 'visible' : 'hidden'}">
+            <div class="card-style-control">
+              <label for="cardStyleSlider" @click=${() => this.cardStyleValue = 0}>Impressionist</label>
+              <input type="range" id="cardStyleSlider" min="0" max="1" .value=${this.cardStyleValue} @input=${(e: Event) => this.cardStyleValue = parseInt((e.target as HTMLInputElement).value)}>
+              <label for="cardStyleSlider" @click=${() => this.cardStyleValue = 1}>RobGon</label>
+            </div>
+            <div class="grid-size-control">
+              <label for="gridSizeSlider" @click=${() => this.gridSizeValue = 0}>Easy</label>
+              <input type="range" id="gridSizeSlider" min="0" max="1" .value=${this.gridSizeValue} @input=${(e: Event) => this.gridSizeValue = parseInt((e.target as HTMLInputElement).value)}>
+              <label for="gridSizeSlider" @click=${() => this.gridSizeValue = 1}>Hard</label>
+            </div>
           </div>
           <button @click=${this.restartGame} class="restart-button">Restart Game</button>
         </div>
