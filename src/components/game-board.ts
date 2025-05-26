@@ -44,6 +44,10 @@ export class GameBoard extends LitElement {
   constructor() {
     super();
     this.gameState = this.initializeGameState();
+    // Initialize cardStyleValue based on the initial game state
+    this.cardStyleValue = this.gameState.cardStyle === 'impressionist' ? 0 : 1;
+    // Ensure image manager's card style matches the game state
+    imageManager.setCardStyle(this.gameState.cardStyle);
 
     // Listen for music start/end events
     this.audioManager.addEventListener('musicStart', () => {
@@ -190,8 +194,10 @@ export class GameBoard extends LitElement {
   handleGameCompletion() {
     // Call the completion callback
     this.onGameCompleted(this.gameState.moves);
-    // Note: Victory music and state transition to VICTORY_MUSIC
-    // will be handled by the match sound's onended event
+    
+    // Ensure sliders reflect current game state
+    this.cardStyleValue = this.gameState.cardStyle === 'impressionist' ? 0 : 1;
+    this.gridSizeValue = this.gameState.gridSize === 'easy' ? 0 : 1;
   }
 
   /**
