@@ -75,10 +75,10 @@ export class FlipCard extends LitElement {
           style="${animationDelay}">
         <div class="flip-card-inner">
           <div class="flip-card-back" @click="${this.handleClick}">
-            <img src="${this.backImage}" alt="${this.backAlt}">
+            <img src="${this.backImage}" alt="${this.backAlt}" draggable="false">
           </div>
           <div class="flip-card-front">
-            <img src="${this.frontImage}" alt="${this.frontAlt}">
+            <img src="${this.frontImage}" alt="${this.frontAlt}" draggable="false">
           </div>
         </div>
       </div>

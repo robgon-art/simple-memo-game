@@ -1,5 +1,7 @@
 # Memory Matching Game
 
+[Try it live here!](https://memo.robgon.com/)
+
 A simple memory matching game implemented with web components using Lit and TypeScript.
 
 ## Playing the Game
@@ -55,3 +57,5 @@ For testing and development purposes, the game supports URL parameters to contro
 ## Next Steps
 
 Future enhancements will include:
+- Alternate Cards
+- Easy, Medium, Hard Modes
