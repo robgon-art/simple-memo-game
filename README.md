@@ -57,5 +57,5 @@ For testing and development purposes, the game supports URL parameters to contro
 ## Next Steps
 
 Future enhancements will include:
-- Alternate Cards
-- Easy, Medium, Hard Modes
+- [x] Alternate Cards
+- [x] Easy and Hard Modes
