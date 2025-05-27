@@ -2,7 +2,7 @@
     display: block;
     width: 98%;
     max-width: 1600px;
-    margin: 0 auto;
+    margin: -25px auto 25px auto;
     --card-width: 192px;
     --card-height: 256px;
     --grid-columns: 6;

@@ -41,28 +41,33 @@ export class Grid extends LitElement {
 
     const gap = 12;
     const padding = 8;
-    // Scale factor to make cards 20% larger
-    const scaleFactor = 1.25;
+    // Scale factor to make cards 20% larger (default)
+    // Adjust scale factor for smaller layouts (fewer pairs)
+    const scaleFactor = this.numPairs <= 5 ? 1.1 : 1.25;
+
+    // Aspect ratio (width/height)
+    // Adjust aspect ratio for smaller layouts (fewer pairs) to make cards skinnier
+    const aspectRatio = this.numPairs <= 5 ? 0.75 : 0.8;
 
     // Calculate available space
     const availableWidth = containerWidth - (padding * 2) - (gap * (layout.columns - 1));
     const availableHeight = containerHeight - (padding * 2) - (gap * (layout.rows - 1));
 
-    // Calculate max card dimensions while preserving 0.8 aspect ratio
+    // Calculate max card dimensions while preserving aspect ratio
     const maxCardWidth = availableWidth / layout.columns;
     const maxCardHeight = availableHeight / layout.rows;
 
-    // Determine optimal size based on aspect ratio (0.8)
+    // Determine optimal size based on aspect ratio
     let optimalWidth, optimalHeight;
 
-    if (maxCardWidth / maxCardHeight > 0.8) {
+    if (maxCardWidth / maxCardHeight > aspectRatio) {
       // Height constrained
       optimalHeight = maxCardHeight;
-      optimalWidth = optimalHeight * 0.8;
+      optimalWidth = optimalHeight * aspectRatio;
     } else {
       // Width constrained
       optimalWidth = maxCardWidth;
-      optimalHeight = optimalWidth / 0.8;
+      optimalHeight = optimalWidth / aspectRatio;
     }
 
     // Apply scaling factor to make cards larger
