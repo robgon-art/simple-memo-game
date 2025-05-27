@@ -18,7 +18,10 @@ describe('Card Selection Functions', () => {
             cards,
             status: GameStatus.IN_PROGRESS,
             moves: 0,
-            selectedCardIds: []
+            selectedCardIds: [],
+            isPreviewMode: false,
+            cardStyle: 'impressionist',
+            gridSize: 'easy'
         };
     };
 
