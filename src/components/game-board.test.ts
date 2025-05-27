@@ -368,6 +368,66 @@ describe('GameBoard Component', () => {
         expect(mockPlayEffect).toHaveBeenCalledWith('cardFlip');
     });
 
+    // Card Style Change Tests
+    it('should change card style to RobGon', async () => {
+        (element as any).handleCardStyleChange(1);
+        await element.updateComplete;
+        expect(element.gameState.cardStyle).toBe('robgon');
+        expect((element as any).cardStyleValue).toBe(0);
+    });
+
+    it('should show preview when changing style with no moves', async () => {
+        (element as any).handleCardStyleChange(0);
+        await element.updateComplete;
+        expect(element.gameState.isPreviewMode).toBe(true);
+    });
+
+    // Grid Size Change Tests
+    it('should update grid size and preserve slider values', async () => {
+        (element as any).gridSizeValue = 1;
+        element.updated(new Map([['gridSizeValue', 0]]));
+        await element.updateComplete;
+        expect(element.gameState.gridSize).toBe('hard');
+        expect((element as any).cardStyleValue).toBe(0); // Preserved
+    });
+
+    // Card Image Tests
+    it('should get correct image path and alt text', () => {
+        const imageId = element.gameState.cards[0].imageId;
+        expect((element as any).getCardImagePath(imageId)).toBeTruthy();
+        expect((element as any).getCardAltText(imageId)).toBeTruthy();
+    });
+
+    it('should handle invalid image IDs', () => {
+        expect((element as any).getCardImagePath(999)).toBe('');
+        expect((element as any).getCardAltText(999)).toBe('Card');
+    });
+
+    // Restart Game Tests
+    it('should ignore restart while already restarting', () => {
+        (element as any).isRestarting = true;
+        const initialState = JSON.stringify(element.gameState);
+        element.restartGame();
+        expect(JSON.stringify(element.gameState)).toBe(initialState);
+    });
+
+    it('should reset all cards face down on restart', async () => {
+        // First reveal some cards
+        element.gameState.cards.forEach(card => {
+            element.handleCardFlip(new CustomEvent('card-flipped'), card.id);
+        });
+        
+        element.restartGame();
+        
+        // Wait for the 500ms timeout to complete
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await element.updateComplete;
+        
+        expect(element.gameState.cards.every(card => !card.isRevealed)).toBe(true);
+        expect(element.gameState.moves).toBe(0);
+        expect(element.gameState.status).toBe(GameStatus.READY);
+    });
+
     describe('URL progress parameter functionality', () => {
         // Store the original URLSearchParams to restore after tests
         const originalURLSearchParams = window.URLSearchParams;
